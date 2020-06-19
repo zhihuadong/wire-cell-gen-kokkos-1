@@ -1,12 +1,14 @@
-INSTALL=/home/yuhw/wc/wct-analysis/csi-kokkos/wire-cell-gen-kokkos-install
-# INSTALL=$1
+# INSTALL=/home/yuhw/wc/wct-analysis/csi-kokkos/wire-cell-gen-kokkos-install
+# KOKKOS_PATH=/home/yuhw/sl7/kokkos
+
+KOKKOS_PATH=$1
+INSTALL=$2
 
 sw=/home/yuhw/sl7/
-export PKG_CONFIG_PATH="$sw/libzmq/lib/pkgconfig:$sw/czmq/lib/pkgconfig:$sw/zyre/lib/pkgconfig:$sw/spdlog/lib64/pkgconfig"
+export PKG_CONFIG_PATH="$sw/spdlog/lib64/pkgconfig"
 
-kokkos_path=$sw/kokkos
-kokkos_inc=$kokkos_path/include
-kokkos_lib=$kokkos_path/lib64
+KOKKOS_INC=$KOKKOS_PATH/include
+KOKKOS_LIB=$KOKKOS_PATH/lib64
 
 ./wcb configure --prefix=$INSTALL \
 --with-tbb="$TBBROOT" \
@@ -25,6 +27,6 @@ kokkos_lib=$kokkos_path/lib64
 \ #--with-cuda-lib="/usr/local/cuda/lib64" \
 --with-wct=$WIRECELL_FQ_DIR/ \
 --with-wct-lib=$WIRECELL_LIB \
---with-kokkos=$kokkos_path/ \
---with-kokkos-include=$kokkos_inc/ \
---with-kokkos-lib=$kokkos_lib/ \
+--with-kokkos=$KOKKOS_PATH/ \
+--with-kokkos-include=$KOKKOS_INC/ \
+--with-kokkos-lib=$KOKKOS_LIB/ \
