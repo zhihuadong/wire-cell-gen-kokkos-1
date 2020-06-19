@@ -7,11 +7,11 @@ APPNAME = 'Junk'
 from waflib.extras import wcb
 wcb.package_descriptions.append(("WCT", dict(
     incs=["WireCellUtil/Units.h"],
-    libs=["WireCellUtil"], mandatory=True)))
+    libs=["WireCellUtil","gomp"], mandatory=True)))
 
 wcb.package_descriptions.append(("KOKKOS", dict(
     incs=["Kokkos_Core.hpp"],
-    libs=["kokkoscore"], mandatory=True)))
+    libs=["kokkoscore", "kokkoscontainers", "dl"], mandatory=True)))
 
 def options(opt):
     opt.load("wcb")
