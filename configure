@@ -1,11 +1,5 @@
-# INSTALL=/home/yuhw/wc/wct-analysis/csi-kokkos/wire-cell-gen-kokkos-install
-# KOKKOS_PATH=/home/yuhw/sl7/kokkos
-
 KOKKOS_PATH=$1
 INSTALL=$2
-
-sw=/home/yuhw/sl7/
-export PKG_CONFIG_PATH="$sw/spdlog/lib64/pkgconfig"
 
 KOKKOS_INC=$KOKKOS_PATH/include
 KOKKOS_LIB=$KOKKOS_PATH/lib64
@@ -30,3 +24,5 @@ KOKKOS_LIB=$KOKKOS_PATH/lib64
 --with-kokkos=$KOKKOS_PATH/ \
 --with-kokkos-include=$KOKKOS_INC/ \
 --with-kokkos-lib=$KOKKOS_LIB/ \
+--with-spdlog-lib=$SPDLOG_LIB \
+--with-spdlog-include=$SPDLOG_INC
