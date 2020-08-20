@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
 using Scalar = float;
 using Layout = Kokkos::LayoutLeft;
@@ -37,7 +38,7 @@ int scatter_add(matrix_type grid, const matrix_type patch, const int x, const in
     return 0;
 }
 
-std::string dump(const matrix_type& A)
+std::string dump(const matrix_type& A, const size_t length_limit = 20)
 {
     std::stringstream ss;
 
@@ -45,7 +46,7 @@ std::string dump(const matrix_type& A)
     size_t N1 = A.extent(1);
     bool print_dot0 = true;
     for (size_t i = 0; i < N0; ++i) {
-        if (i > 20 && i < N0 - 20) {
+        if (i > length_limit && i < N0 - length_limit) {
             if (print_dot0) {
                 ss << "... \n";
                 print_dot0 = false;
@@ -55,7 +56,7 @@ std::string dump(const matrix_type& A)
 
         bool print_dot1 = true;
         for (size_t j = 0; j < N1; ++j) {
-            if (j > 20 && j < N1 - 20) {
+            if (j > length_limit && j < N1 - length_limit) {
                 if (print_dot1) {
                     ss << "... ";
                     print_dot1 = false;
@@ -85,6 +86,8 @@ void quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const i
 
     std::vector<int> vec_x;
     std::vector<int> vec_y;
+    // std::srand(std::time(nullptr)); // current time as seed
+    std::srand(0); // using 0 as seed, repeatable
     for (int i = 0; i < Npatch; ++i) {
         vec_x.push_back(1.0 * std::rand() / RAND_MAX * (N0 - M0));
         vec_y.push_back(1.0 * std::rand() / RAND_MAX * (N1 - M1));
@@ -103,15 +106,30 @@ void quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const i
 
     if (verbose) {
         std::cout << "output grid: \n" << dump(grid) << std::endl;
+        std::ofstream fout("out.csv");
+        fout << dump(grid, INT_MAX);
     }
 }
 
 int main(int argc, char* argv[])
 {
+    int npatch = 100000;
+    int nrep = 1;
+
+    if(argc > 1) {
+        npatch = atoi(argv[1]);
+    }
+
+    if(argc > 2) {
+        nrep = atoi(argv[2]);
+    }
+
+    std::cout << "npatch: " << npatch << " nrep: " << nrep << std::endl;
+
     Kokkos::initialize(argc, argv);
     {
-        for (int rep = 0; rep < 100; ++rep) {
-            quick_check(1000, 6000, 15, 30, 100000, false);
+        for (int rep = 0; rep < nrep; ++rep) {
+            quick_check(1000, 6000, 15, 30, npatch, true);
         }
     }
     Kokkos::finalize();
