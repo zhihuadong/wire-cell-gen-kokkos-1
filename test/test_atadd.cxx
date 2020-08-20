@@ -3,6 +3,7 @@
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <fstream>
 
@@ -106,7 +107,7 @@ void quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const i
 
     if (verbose) {
         std::cout << "output grid: \n" << dump(grid) << std::endl;
-        std::ofstream fout("out.csv");
+        std::ofstream fout("grid.csv");
         fout << dump(grid, INT_MAX);
     }
 }
@@ -125,11 +126,34 @@ int main(int argc, char* argv[])
     }
 
     std::cout << "npatch: " << npatch << " nrep: " << nrep << std::endl;
-
+    std::vector<int> nthreads = {16};
     Kokkos::initialize(argc, argv);
     {
-        for (int rep = 0; rep < nrep; ++rep) {
-            quick_check(1000, 6000, 15, 30, npatch, true);
+        // single run
+
+        if (nrep == 1) {
+            for (int rep = 0; rep < nrep; ++rep) {
+                quick_check(1000, 6000, 15, 30, npatch, true);
+            }
+        } else {
+            std::stringstream ss;
+            ss << "prof-";
+            ss << npatch;
+            ss << "-";
+            ss << nrep;
+            ss << ".csv";
+            std::ofstream fout(ss.str());
+            
+            for (auto nthread : nthreads) {
+                // omp_set_dynamic(0);
+                // omp_set_num_threads(nthread);
+                Kokkos::Timer timer;
+                for (int rep = 0; rep < nrep; ++rep) {
+                    quick_check(1000, 6000, 15, 30, npatch, false);
+                }
+                double time = timer.seconds();
+                fout << omp_get_max_threads() << " " << time << std::endl;
+            }
         }
     }
     Kokkos::finalize();
