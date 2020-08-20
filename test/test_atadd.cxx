@@ -88,7 +88,7 @@ void quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const i
     std::vector<int> vec_x;
     std::vector<int> vec_y;
     // std::srand(std::time(nullptr)); // current time as seed
-    std::srand(0); // using 0 as seed, repeatable
+    std::srand(0);  // using 0 as seed, repeatable
     for (int i = 0; i < Npatch; ++i) {
         vec_x.push_back(1.0 * std::rand() / RAND_MAX * (N0 - M0));
         vec_y.push_back(1.0 * std::rand() / RAND_MAX * (N1 - M1));
@@ -117,11 +117,11 @@ int main(int argc, char* argv[])
     int npatch = 100000;
     int nrep = 1;
 
-    if(argc > 1) {
+    if (argc > 1) {
         npatch = atoi(argv[1]);
     }
 
-    if(argc > 2) {
+    if (argc > 2) {
         nrep = atoi(argv[2]);
     }
 
@@ -129,32 +129,12 @@ int main(int argc, char* argv[])
     std::vector<int> nthreads = {16};
     Kokkos::initialize(argc, argv);
     {
-        // single run
-
-        if (nrep == 1) {
-            for (int rep = 0; rep < nrep; ++rep) {
-                quick_check(1000, 6000, 15, 30, npatch, true);
-            }
-        } else {
-            std::stringstream ss;
-            ss << "prof-";
-            ss << npatch;
-            ss << "-";
-            ss << nrep;
-            ss << ".csv";
-            std::ofstream fout(ss.str());
-            
-            for (auto nthread : nthreads) {
-                // omp_set_dynamic(0);
-                // omp_set_num_threads(nthread);
-                Kokkos::Timer timer;
-                for (int rep = 0; rep < nrep; ++rep) {
-                    quick_check(1000, 6000, 15, 30, npatch, false);
-                }
-                double time = timer.seconds();
-                fout << omp_get_max_threads() << " " << time << std::endl;
-            }
+        Kokkos::Timer timer;
+        for (int rep = 0; rep < nrep; ++rep) {
+            quick_check(1000, 6000, 15, 30, npatch, nrep<2);
         }
+        double time = timer.seconds();
+        std::cout << omp_get_max_threads() << " " << time << std::endl;
     }
     Kokkos::finalize();
 }
