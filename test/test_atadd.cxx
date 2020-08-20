@@ -114,8 +114,8 @@ void quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const i
 
 int main(int argc, char* argv[])
 {
-    int npatch = 100000;
-    int nrep = 1;
+    int npatch = 10000;
+    int nrep = 10;
 
     if (argc > 1) {
         npatch = atoi(argv[1]);
@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
             quick_check(1000, 6000, 15, 30, npatch, nrep<2);
         }
         double time = timer.seconds();
-        std::cout << omp_get_max_threads() << " " << time << std::endl;
+        std::cout << "Kokkos::Timer: " << " " << time << std::endl;
     }
     Kokkos::finalize();
 }
