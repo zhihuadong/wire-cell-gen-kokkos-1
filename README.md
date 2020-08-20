@@ -1,10 +1,14 @@
 # Kokkos version of the wire-cell-gen
 
 ## prerequisites
- - Need to have access to a WireCell-Toolkit build.
- - Need to have `Kokkos` installed.
+ - Need to have access to a `Wire-Cell Toolkit` build and its dependencies.
+ - Need to have access to a `Kokkos` build.
 
-## build
+## build on cori with shifter
+
+[Shifter usage for Cori](https://github.com/hep-cce2/PPSwork/blob/master/Wire-Cell/Shifter.md)
+
+Within shifter container:
 
 ```bash
 git clone https://github.com/WireCell/wire-cell-gen-kokkos.git
@@ -12,6 +16,8 @@ cd wire-cell-gen-kokkos
 ./configure /path/to/kokkos /path/to/install
 ./wcb install
 ```
+
+**To build on other machines, change the `configure` to find the needed dependencies.**
 
 ## test
 
