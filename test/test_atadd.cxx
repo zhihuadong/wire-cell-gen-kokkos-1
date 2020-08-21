@@ -90,24 +90,24 @@ double quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const
     // std::srand(std::time(nullptr)); // current time as seed
     std::srand(0);  // using 0 as seed, repeatable
 
-    // std::vector<Index> vec_x;
-    // std::vector<Index> vec_y;
-    // for (int i = 0; i < Npatch; ++i) {
-    //     vec_x.push_back((1.0 * std::rand() / RAND_MAX * (N0 - M0)));
-    //     vec_y.push_back((1.0 * std::rand() / RAND_MAX * (N1 - M1)));
-    // }
-
-    Kokkos::View<Index*> vec_x("vec_x", Npatch);
-    Kokkos::View<Index*> vec_y("vec_y", Npatch);
+    std::vector<Index> vec_x;
+    std::vector<Index> vec_y;
     for (int i = 0; i < Npatch; ++i) {
-        vec_x(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N0 - M0));
-        vec_y(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N1 - M1));
+        vec_x.push_back((1.0 * std::rand() / RAND_MAX * (N0 - M0)));
+        vec_y.push_back((1.0 * std::rand() / RAND_MAX * (N1 - M1)));
     }
+
+    // Kokkos::View<Index*> vec_x("vec_x", Npatch);
+    // Kokkos::View<Index*> vec_y("vec_y", Npatch);
+    // for (int i = 0; i < Npatch; ++i) {
+    //     vec_x(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N0 - M0));
+    //     vec_y(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N1 - M1));
+    // }
 
     Kokkos::Timer timer;
     Kokkos::parallel_for("ScAdd",
                          Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Left>>({0, 0, 0}, {Npatch, M0, M1}),
-                         KOKKOS_LAMBDA(const int p, const int i, const int j) {
+                         KOKKOS_LAMBDA(const int& p, const int& i, const int& j) {
                              // auto patch = gen_2D_view(M0, M1, 1);
                              // std::this_thread::sleep_for(std::chrono::microseconds(wait));
                              auto x = vec_x[p];
