@@ -60,9 +60,9 @@ namespace WireCell {
 	    BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
 			    double nsigma=3.0, IRandom::pointer fluctuate=nullptr,
                             ImpactDataCalculationStrategy calcstrat = linear);
-            #ifdef HAVE_CUDA_INC
+            //#ifdef HAVE_CUDA_INC
             virtual ~BinnedDiffusion_transform();
-            #endif
+            //#endif
 
             const Pimpos& pimpos() const { return m_pimpos; }
             const Binning& tbins() const { return m_tbins; }
@@ -139,10 +139,10 @@ namespace WireCell {
             #endif
 
         private:
-            #ifdef HAVE_CUDA_INC
+            //#ifdef HAVE_CUDA_INC
             void init_Device();
             void clear_Device();
-            #endif
+            //#endif
 
 
 	};

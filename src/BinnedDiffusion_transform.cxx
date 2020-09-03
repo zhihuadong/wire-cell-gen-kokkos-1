@@ -5,9 +5,21 @@
 #include <iostream>             // debug
 #include <omp.h>
 #include <unordered_map>
+
+
+#include <Kokkos_Core.hpp>
+
+#include <Kokkos_Random.hpp>
+#include <Kokkos_DualView.hpp>
+#include <impl/Kokkos_Timer.hpp>
+
+
+
+
 using namespace std;
 
 using namespace WireCell;
+//using namespace Kokkos;
 
 double g_get_charge_vec_time_part1 = 0.0;
 double g_get_charge_vec_time_part2 = 0.0;
@@ -35,6 +47,31 @@ extern size_t g_total_sample_size;
 // }
 
 
+
+template <class GeneratorPool>
+struct generate_random {
+  Kokkos::View<uint64_t*> vals;
+
+  GeneratorPool rand_pool;
+
+  int samples;
+
+  generate_random(Kokkos::View<uint64_t*> vals_, GeneratorPool rand_pool_, int samples_)
+      : vals(vals_), rand_pool(rand_pool_), samples(samples_) {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()(int i) const {
+    typename GeneratorPool::generator_type rand_gen = rand_pool.get_state();
+
+    for (int k = 0; k < samples; k++)
+      vals(i * samples + k) = rand_gen.urand64();
+
+    rand_pool.free_state(rand_gen);
+  }
+};
+
+
+
 Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
                                       double nsigma, IRandom::pointer fluctuate,
                                       ImpactDataCalculationStrategy calcstrat)
@@ -47,17 +84,46 @@ Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpo
     , m_outside_pitch(0)
     , m_outside_time(0)
 {
-#ifdef HAVE_CUDA_INC    
+//#ifdef HAVE_CUDA_INC    
     init_Device();
-#endif    
+//#endif    
 }
 
 
-#ifdef HAVE_CUDA_INC    
+//#ifdef HAVE_CUDA_INC    
 Kokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
 }
-#endif    
+//#endif    
+
+
+
+void Kokkos::BinnedDiffusion_transform::init_Device() {
+  CUDA_SAFE_CALL( cudaMalloc(&m_pvec_D, MAX_NPSS_DEVICE * sizeof(double)) );
+  CUDA_SAFE_CALL( cudaMalloc(&m_tvec_D, MAX_NTSS_DEVICE * sizeof(double)) );
+  CUDA_SAFE_CALL( cudaMalloc(&m_patch_D, MAX_NPSS_DEVICE * MAX_NTSS_DEVICE * sizeof(float)) );
+  CUDA_SAFE_CALL( cudaMalloc(&m_rand_D, MAX_RANDOM_LENGTH * sizeof(float)) );
+
+  CURAND_SAFE_CALL(curandCreateGenerator(&m_Gen,CURAND_RNG_PSEUDO_DEFAULT));
+  CURAND_SAFE_CALL(curandSetPseudoRandomGeneratorSeed(m_Gen, 0));
+  CURAND_SAFE_CALL(curandGenerateNormal(m_Gen, m_rand_D, MAX_RANDOM_LENGTH, 0.0, 1.0));
+
+  tempVec = new double[1024];
+}
+
+
+void Kokkos::BinnedDiffusion_transform::clear_Device() {
+  CUDA_SAFE_CALL(cudaFree(m_pvec_D));
+  CUDA_SAFE_CALL(cudaFree(m_tvec_D));
+  CUDA_SAFE_CALL(cudaFree(m_patch_D));
+  CUDA_SAFE_CALL(cudaFree(m_rand_D));
+
+  CURAND_SAFE_CALL(curandDestroyGenerator(m_Gen));
+
+  delete[] tempVec;
+}
+
+
 
 
 bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
