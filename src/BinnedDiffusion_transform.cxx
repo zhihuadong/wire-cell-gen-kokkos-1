@@ -18,7 +18,8 @@
 
 using namespace std;
 
-using namespace WireCell;
+//using namespace WireCell;
+namespace wc = WireCell::Kokkos;
 //using namespace Kokkos;
 
 double g_get_charge_vec_time_part1 = 0.0;
@@ -72,7 +73,7 @@ struct generate_random {
 
 
 
-Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
+WireCell::Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
                                       double nsigma, IRandom::pointer fluctuate,
                                       ImpactDataCalculationStrategy calcstrat)
     : m_pimpos(pimpos)
@@ -91,48 +92,48 @@ Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpo
 
 
 //#ifdef HAVE_CUDA_INC    
-Kokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
+WireCell::Kokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
 }
 //#endif    
 
 
 
-void Kokkos::BinnedDiffusion_transform::init_Device() {
-  CUDA_SAFE_CALL( cudaMalloc(&m_pvec_D, MAX_NPSS_DEVICE * sizeof(double)) );
-  CUDA_SAFE_CALL( cudaMalloc(&m_tvec_D, MAX_NTSS_DEVICE * sizeof(double)) );
-  CUDA_SAFE_CALL( cudaMalloc(&m_patch_D, MAX_NPSS_DEVICE * MAX_NTSS_DEVICE * sizeof(float)) );
-  CUDA_SAFE_CALL( cudaMalloc(&m_rand_D, MAX_RANDOM_LENGTH * sizeof(float)) );
+void WireCell::Kokkos::BinnedDiffusion_transform::init_Device() {
+  //CUDA_SAFE_CALL( cudaMalloc(&m_pvec_D, MAX_NPSS_DEVICE * sizeof(double)) );
+  //CUDA_SAFE_CALL( cudaMalloc(&m_tvec_D, MAX_NTSS_DEVICE * sizeof(double)) );
+  //CUDA_SAFE_CALL( cudaMalloc(&m_patch_D, MAX_NPSS_DEVICE * MAX_NTSS_DEVICE * sizeof(float)) );
+  //CUDA_SAFE_CALL( cudaMalloc(&m_rand_D, MAX_RANDOM_LENGTH * sizeof(float)) );
 
-  CURAND_SAFE_CALL(curandCreateGenerator(&m_Gen,CURAND_RNG_PSEUDO_DEFAULT));
-  CURAND_SAFE_CALL(curandSetPseudoRandomGeneratorSeed(m_Gen, 0));
-  CURAND_SAFE_CALL(curandGenerateNormal(m_Gen, m_rand_D, MAX_RANDOM_LENGTH, 0.0, 1.0));
+  //CURAND_SAFE_CALL(curandCreateGenerator(&m_Gen,CURAND_RNG_PSEUDO_DEFAULT));
+  //CURAND_SAFE_CALL(curandSetPseudoRandomGeneratorSeed(m_Gen, 0));
+  //CURAND_SAFE_CALL(curandGenerateNormal(m_Gen, m_rand_D, MAX_RANDOM_LENGTH, 0.0, 1.0));
 
-  tempVec = new double[1024];
+  //tempVec = new double[1024];
 }
 
 
-void Kokkos::BinnedDiffusion_transform::clear_Device() {
-  CUDA_SAFE_CALL(cudaFree(m_pvec_D));
-  CUDA_SAFE_CALL(cudaFree(m_tvec_D));
-  CUDA_SAFE_CALL(cudaFree(m_patch_D));
-  CUDA_SAFE_CALL(cudaFree(m_rand_D));
+void WireCell::Kokkos::BinnedDiffusion_transform::clear_Device() {
+  //CUDA_SAFE_CALL(cudaFree(m_pvec_D));
+  //CUDA_SAFE_CALL(cudaFree(m_tvec_D));
+  //CUDA_SAFE_CALL(cudaFree(m_patch_D));
+  //CUDA_SAFE_CALL(cudaFree(m_rand_D));
 
-  CURAND_SAFE_CALL(curandDestroyGenerator(m_Gen));
+  //CURAND_SAFE_CALL(curandDestroyGenerator(m_Gen));
 
-  delete[] tempVec;
+  //delete[] tempVec;
 }
 
 
 
 
-bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
+bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
 {
 
     const double center_time = depo->time();
     const double center_pitch = m_pimpos.distance(depo->pos());
 
-    Kokkos::GausDesc time_desc(center_time, sigma_time);
+    WireCell::Kokkos::GausDesc time_desc(center_time, sigma_time);
     {
         double nmin_sigma = time_desc.distance(m_tbins.min());
         double nmax_sigma = time_desc.distance(m_tbins.max());
@@ -151,7 +152,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 
     auto ibins = m_pimpos.impact_binning();
 
-    Kokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
+    WireCell::Kokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
     {
         double nmin_sigma = pitch_desc.distance(ibins.min());
         double nmax_sigma = pitch_desc.distance(ibins.max());
@@ -217,7 +218,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 // }
 
 
-void Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
+void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
   const auto ib = m_pimpos.impact_binning();
 
   // map between reduced impact # to array # 
@@ -312,7 +313,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::Spa
 }
 
 // a new function to generate the result for the entire frame ... 
-void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
+void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
 
   double wstart, wend, wstart2, wend2;
 
@@ -449,7 +450,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<s
 }
 
 
-// Kokkos::ImpactData::pointer Kokkos::BinnedDiffusion_transform::impact_data(int bin) const
+// WireCell::Kokkos::ImpactData::pointer Kokkos::BinnedDiffusion_transform::impact_data(int bin) const
 // {
 //     const auto ib = m_pimpos.impact_binning();
 //     if (! ib.inbounds(bin)) {
@@ -474,7 +475,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<s
 
 
 static
-std::pair<double,double> gausdesc_range(const std::vector<Kokkos::GausDesc> gds, double nsigma)
+std::pair<double,double> gausdesc_range(const std::vector<WireCell::Kokkos::GausDesc> gds, double nsigma)
 {
     int ncount = -1;
     double vmin=0, vmax=0;
@@ -494,16 +495,16 @@ std::pair<double,double> gausdesc_range(const std::vector<Kokkos::GausDesc> gds,
     return std::make_pair(vmin,vmax);
 }
 
-std::pair<double,double> Kokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
+std::pair<double,double> WireCell::Kokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
 {
-    std::vector<Kokkos::GausDesc> gds;
+    std::vector<WireCell::Kokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->pitch_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> Kokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
+std::pair<int,int> WireCell::Kokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
 {
     const auto ibins = m_pimpos.impact_binning();
     auto mm = pitch_range(nsigma);
@@ -511,16 +512,16 @@ std::pair<int,int> Kokkos::BinnedDiffusion_transform::impact_bin_range(double ns
                           std::min(ibins.bin(mm.second)+1, ibins.nbins()));
 }
 
-std::pair<double,double> Kokkos::BinnedDiffusion_transform::time_range(double nsigma) const
+std::pair<double,double> WireCell::Kokkos::BinnedDiffusion_transform::time_range(double nsigma) const
 {
-    std::vector<Kokkos::GausDesc> gds;
+    std::vector<WireCell::Kokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->time_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> Kokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
+std::pair<int,int> WireCell::Kokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
 {
     auto mm = time_range(nsigma);
     return std::make_pair(std::max(m_tbins.bin(mm.first),0),
