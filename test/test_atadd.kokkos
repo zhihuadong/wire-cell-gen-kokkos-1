@@ -123,6 +123,24 @@ double quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const
         std::cout << "output grid: \n" << dump(grid) << std::endl;
         std::ofstream fout("grid.csv");
         fout << dump(grid, INT_MAX);
+
+        // sum check
+        matrix_type::HostMirror h_grid = Kokkos::create_mirror_view(grid);
+        Kokkos::deep_copy(h_grid, grid);
+        int N_expect = Npatch * M0 *M1;
+        int N_test = 0;
+        for (size_t i = 0; i < h_grid.extent(0); ++i) {
+            for (size_t j = 0; j < h_grid.extent(1); ++j) {
+                N_test += h_grid(i,j);
+            }
+        }
+
+        std::cout << "Test:" << N_test << ", expect: " << N_expect << std::endl;
+        if(N_expect == N_test) {
+            std::cout << "Sum check OK:" << std::endl;
+        } else {
+            std::cout << "Sum check fail." << std::endl;
+        }
     }
 
     return time;
