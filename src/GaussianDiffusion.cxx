@@ -16,7 +16,7 @@ double g_set_sampling_part5 = 0.0;
 
 
 
-std::vector<double> Kokkos::GausDesc::sample(double start, double step, int nsamples) const
+std::vector<double> GenKokkos::GausDesc::sample(double start, double step, int nsamples) const
 {
     std::vector<double> ret;
     
@@ -39,7 +39,7 @@ std::vector<double> Kokkos::GausDesc::sample(double start, double step, int nsam
     return ret;
 }
 
-std::vector<double> Kokkos::GausDesc::binint(double start, double step, int nbins) const
+std::vector<double> GenKokkos::GausDesc::binint(double start, double step, int nbins) const
 {
     std::vector<double> bins;
     
@@ -72,7 +72,7 @@ std::vector<double> Kokkos::GausDesc::binint(double start, double step, int nbin
 // integral Normal distribution with weighting function
 // a linear weighting for the charge in each pbin
 // Integral of charge spectrum <pvec> done by GausDesc::binint (do not do it again using Erf())
-std::vector<double> Kokkos::GausDesc::weight(double start, double step, int nbins, std::vector<double> pvec) const
+std::vector<double> GenKokkos::GausDesc::weight(double start, double step, int nbins, std::vector<double> pvec) const
 {
     std::vector<double> wt;
     if(!sigma){
@@ -106,7 +106,7 @@ std::vector<double> Kokkos::GausDesc::weight(double start, double step, int nbin
 }
 
 
-// std::pair<int,int> Kokkos::GausDesc::subsample_range(int nsamples, double xmin, double xmax, double nsigma) const
+// std::pair<int,int> GenKokkos::GausDesc::subsample_range(int nsamples, double xmin, double xmax, double nsigma) const
 // {
 //     const double sample_size = (xmax-xmin)/(nsamples-1);
 //     // find closest sample indices
@@ -121,7 +121,7 @@ std::vector<double> Kokkos::GausDesc::weight(double start, double step, int nbin
 /// GaussianDiffusion
 
 
-Kokkos::GaussianDiffusion::GaussianDiffusion(const IDepo::pointer& depo,
+GenKokkos::GaussianDiffusion::GaussianDiffusion(const IDepo::pointer& depo,
 					  const GausDesc& time_desc, 
 					  const GausDesc& pitch_desc)
     : m_deposition(depo)
@@ -132,7 +132,7 @@ Kokkos::GaussianDiffusion::GaussianDiffusion(const IDepo::pointer& depo,
 {
 }
 
-void Kokkos::GaussianDiffusion::set_sampling(const Binning& tbin, // overall time tick binning
+void GenKokkos::GaussianDiffusion::set_sampling(const Binning& tbin, // overall time tick binning
                                           const Binning& pbin, // overall impact position binning
                                           double nsigma,
                                           IRandom::pointer fluctuate,
@@ -154,7 +154,7 @@ void Kokkos::GaussianDiffusion::set_sampling(const Binning& tbin, // overall tim
     auto tvec =  m_time_desc.binint(tbin.edge(m_toffset_bin), tbin.binsize(), ntss);
 
     if (!ntss) {
-        cerr << "Kokkos::GaussianDiffusion: no time bins for [" << tval_range.first/units::us << "," << tval_range.second/units::us << "] us\n";
+        cerr << "GenKokkos::GaussianDiffusion: no time bins for [" << tval_range.first/units::us << "," << tval_range.second/units::us << "] us\n";
         return;
     }
 
@@ -246,7 +246,7 @@ void Kokkos::GaussianDiffusion::set_sampling(const Binning& tbin, // overall tim
 
 }
 
-void Kokkos::GaussianDiffusion::clear_sampling(){
+void GenKokkos::GaussianDiffusion::clear_sampling(){
   m_patch.resize(0,0); 
   m_qweights.clear();
   m_qweights.shrink_to_fit();
@@ -254,12 +254,12 @@ void Kokkos::GaussianDiffusion::clear_sampling(){
 
 // patch = nimpacts rows X nticks columns
 // patch(row,col)
-const Kokkos::GaussianDiffusion::patch_t& Kokkos::GaussianDiffusion::patch() const
+const GenKokkos::GaussianDiffusion::patch_t& GenKokkos::GaussianDiffusion::patch() const
 {
     return m_patch;
 }
 
-const std::vector<double> Kokkos::GaussianDiffusion::weights() const
+const std::vector<double> GenKokkos::GaussianDiffusion::weights() const
 {
     return m_qweights;
 }

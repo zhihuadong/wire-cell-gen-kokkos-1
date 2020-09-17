@@ -23,7 +23,7 @@ extern double g_set_sampling_part5;
 
 extern size_t g_total_sample_size;
 
-// bool Kokkos::GausDiffTimeCompare::operator()(const std::shared_ptr<Kokkos::GaussianDiffusion>& lhs, const std::shared_ptr<Kokkos::GaussianDiffusion>& rhs) const
+// bool GenKokkos::GausDiffTimeCompare::operator()(const std::shared_ptr<GenKokkos::GaussianDiffusion>& lhs, const std::shared_ptr<GenKokkos::GaussianDiffusion>& rhs) const
 // {
 //   if (lhs->depo_time() == rhs->depo_time()) {
 //     if (lhs->depo_x() == lhs->depo_x()) {
@@ -35,7 +35,7 @@ extern size_t g_total_sample_size;
 // }
 
 
-Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
+GenKokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
                                       double nsigma, IRandom::pointer fluctuate,
                                       ImpactDataCalculationStrategy calcstrat)
     : m_pimpos(pimpos)
@@ -54,19 +54,19 @@ Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpo
 
 
 #ifdef HAVE_CUDA_INC    
-Kokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
+GenKokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
 }
 #endif    
 
 
-bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
+bool GenKokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
 {
 
     const double center_time = depo->time();
     const double center_pitch = m_pimpos.distance(depo->pos());
 
-    Kokkos::GausDesc time_desc(center_time, sigma_time);
+    GenKokkos::GausDesc time_desc(center_time, sigma_time);
     {
         double nmin_sigma = time_desc.distance(m_tbins.min());
         double nmax_sigma = time_desc.distance(m_tbins.max());
@@ -85,7 +85,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 
     auto ibins = m_pimpos.impact_binning();
 
-    Kokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
+    GenKokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
     {
         double nmin_sigma = pitch_desc.distance(ibins.min());
         double nmax_sigma = pitch_desc.distance(ibins.max());
@@ -119,7 +119,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
     return true;
 }
 
-// void Kokkos::BinnedDiffusion_transform::add(std::shared_ptr<GaussianDiffusion> gd, int bin)
+// void GenKokkos::BinnedDiffusion_transform::add(std::shared_ptr<GaussianDiffusion> gd, int bin)
 // {
 //     ImpactData::mutable_pointer idptr = nullptr;
 //     auto it = m_impacts.find(bin);
@@ -133,7 +133,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 //     idptr->add(gd);
 //     if (false) {                           // debug
 //         auto mm = idptr->span();
-//         cerr << "Kokkos::BinnedDiffusion_transform: add: "
+//         cerr << "GenKokkos::BinnedDiffusion_transform: add: "
 //              << " poffoset="<<gd->poffset_bin()
 //              << " toffoset="<<gd->toffset_bin()
 //              << " charge=" << gd->depo()->charge()/units::eplus << " eles"
@@ -143,7 +143,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 //     //m_diffs.push_back(gd);
 // }
 
-// void Kokkos::BinnedDiffusion_transform::erase(int begin_impact_number, int end_impact_number)
+// void GenKokkos::BinnedDiffusion_transform::erase(int begin_impact_number, int end_impact_number)
 // {
 //     for (int bin=begin_impact_number; bin<end_impact_number; ++bin) {
 // 	m_impacts.erase(bin);
@@ -151,7 +151,7 @@ bool Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_ti
 // }
 
 
-void Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
+void GenKokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
   const auto ib = m_pimpos.impact_binning();
 
   // map between reduced impact # to array # 
@@ -246,7 +246,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::Spa
 }
 
 // a new function to generate the result for the entire frame ... 
-void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
+void GenKokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
 
   double wstart, wend, wstart2, wend2;
 
@@ -383,7 +383,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<s
 }
 
 
-// Kokkos::ImpactData::pointer Kokkos::BinnedDiffusion_transform::impact_data(int bin) const
+// GenKokkos::ImpactData::pointer GenKokkos::BinnedDiffusion_transform::impact_data(int bin) const
 // {
 //     const auto ib = m_pimpos.impact_binning();
 //     if (! ib.inbounds(bin)) {
@@ -408,7 +408,7 @@ void Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<s
 
 
 static
-std::pair<double,double> gausdesc_range(const std::vector<Kokkos::GausDesc> gds, double nsigma)
+std::pair<double,double> gausdesc_range(const std::vector<GenKokkos::GausDesc> gds, double nsigma)
 {
     int ncount = -1;
     double vmin=0, vmax=0;
@@ -428,16 +428,16 @@ std::pair<double,double> gausdesc_range(const std::vector<Kokkos::GausDesc> gds,
     return std::make_pair(vmin,vmax);
 }
 
-std::pair<double,double> Kokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
+std::pair<double,double> GenKokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
 {
-    std::vector<Kokkos::GausDesc> gds;
+    std::vector<GenKokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->pitch_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> Kokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
+std::pair<int,int> GenKokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
 {
     const auto ibins = m_pimpos.impact_binning();
     auto mm = pitch_range(nsigma);
@@ -445,16 +445,16 @@ std::pair<int,int> Kokkos::BinnedDiffusion_transform::impact_bin_range(double ns
                           std::min(ibins.bin(mm.second)+1, ibins.nbins()));
 }
 
-std::pair<double,double> Kokkos::BinnedDiffusion_transform::time_range(double nsigma) const
+std::pair<double,double> GenKokkos::BinnedDiffusion_transform::time_range(double nsigma) const
 {
-    std::vector<Kokkos::GausDesc> gds;
+    std::vector<GenKokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->time_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> Kokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
+std::pair<int,int> GenKokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
 {
     auto mm = time_range(nsigma);
     return std::make_pair(std::max(m_tbins.bin(mm.first),0),

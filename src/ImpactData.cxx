@@ -5,36 +5,36 @@
 using namespace WireCell;
 using namespace std;
 
-Kokkos::ImpactData::ImpactData(int impact)
+GenKokkos::ImpactData::ImpactData(int impact)
     : m_impact(impact)
 {
 }
-void Kokkos::ImpactData::add(GaussianDiffusion::pointer diffusion)
+void GenKokkos::ImpactData::add(GaussianDiffusion::pointer diffusion)
 {
     m_diffusions.push_back(diffusion);
 }
 
-Waveform::realseq_t& Kokkos::ImpactData::waveform() const
+Waveform::realseq_t& GenKokkos::ImpactData::waveform() const
 {
     return m_waveform;
 }
 
-Waveform::compseq_t& Kokkos::ImpactData::spectrum() const
+Waveform::compseq_t& GenKokkos::ImpactData::spectrum() const
 {
     return m_spectrum;
 }
 
-Waveform::realseq_t& Kokkos::ImpactData::weightform() const
+Waveform::realseq_t& GenKokkos::ImpactData::weightform() const
 {
     return m_weights;
 }
 
-Waveform::compseq_t& Kokkos::ImpactData::weight_spectrum() const
+Waveform::compseq_t& GenKokkos::ImpactData::weight_spectrum() const
 {
     return m_weight_spectrum;
 }
 
-void Kokkos::ImpactData::calculate(int nticks) const
+void GenKokkos::ImpactData::calculate(int nticks) const
 {
     if (m_waveform.size() > 0) {
         return;
@@ -75,7 +75,7 @@ void Kokkos::ImpactData::calculate(int nticks) const
 }
 
 
-// std::pair<int,int> Kokkos::ImpactData::strip() const
+// std::pair<int,int> GenKokkos::ImpactData::strip() const
 // {
 //     int imin=-1, imax = -1;
 //     for (int ind=0; ind<m_waveform.size(); ++ind) {
@@ -86,7 +86,7 @@ void Kokkos::ImpactData::calculate(int nticks) const
 //     return std::make_pair(imin, imax+1);
 // }
 
-std::pair<double, double> Kokkos::ImpactData::span(double nsigma) const
+std::pair<double, double> GenKokkos::ImpactData::span(double nsigma) const
 {
     int ncount = -1;
     double tmin=0, tmax=0;
