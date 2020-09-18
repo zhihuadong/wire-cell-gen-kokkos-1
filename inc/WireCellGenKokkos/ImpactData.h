@@ -13,7 +13,7 @@
 #define WIRECELLGEN_IMPACTDATA
 
 namespace WireCell {
-    namespace Kokkos {
+    namespace GenKokkos {
 	/// Information that has been collected at one impact position
 	class ImpactData {
 	    int m_impact;

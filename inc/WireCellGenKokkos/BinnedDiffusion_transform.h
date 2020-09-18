@@ -12,6 +12,7 @@
 #include <Eigen/Sparse>
 
 #include "config.h"
+#undef HAVE_CUDA_INC
 #ifdef HAVE_CUDA_INC
   #include <cuda.h>
   #include <curand.h>
@@ -19,10 +20,10 @@
 
 
 namespace WireCell {
-    namespace Kokkos {
+    namespace GenKokkos {
 
       /* struct GausDiffTimeCompare{ */
-      /* 	bool operator()(const std::shared_ptr<Kokkos::GaussianDiffusion>& lhs, const std::shared_ptr<Kokkos::GaussianDiffusion>& rhs) const; */
+      /* 	bool operator()(const std::shared_ptr<GenKokkos::GaussianDiffusion>& lhs, const std::shared_ptr<GenKokkos::GaussianDiffusion>& rhs) const; */
       /* }; */
 	/**  A BinnedDiffusion_transform maintains an association between impact
 	 * positions along the pitch direction of a wire plane and
@@ -122,7 +123,7 @@ namespace WireCell {
 	    // current window set by user.
 	    std::pair<int,int> m_window;
 	    // the content of the current window
-	    std::map<int, Kokkos::ImpactData::mutable_pointer> m_impacts;
+	    std::map<int, GenKokkos::ImpactData::mutable_pointer> m_impacts;
             //std::vector<std::shared_ptr<GaussianDiffusion> > m_diffs;
 	    //std::set<std::shared_ptr<GaussianDiffusion>, GausDiffTimeCompare> m_diffs;
 	    std::set<std::shared_ptr<GaussianDiffusion> > m_diffs;

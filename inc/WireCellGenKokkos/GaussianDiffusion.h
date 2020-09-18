@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "config.h"
+#undef HAVE_CUDA_INC
 #ifdef HAVE_CUDA_INC
   #include <cuda.h>
   #include <curand.h>
@@ -17,7 +18,7 @@
 
 
 namespace WireCell {
-    namespace Kokkos {
+    namespace GenKokkos {
 
 	/** A GausDesc describes a Gaussian distribution.
          *
