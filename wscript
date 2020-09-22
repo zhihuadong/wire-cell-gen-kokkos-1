@@ -9,10 +9,6 @@ wcb.package_descriptions.append(("WCT", dict(
     incs=["WireCellUtil/Units.h"],
     libs=["WireCellUtil","gomp"], mandatory=True)))
 
-wcb.package_descriptions.append(("KOKKOS", dict(
-    incs=["Kokkos_Core.hpp"],
-    libs=["kokkoscore", "kokkoscontainers", "dl"], mandatory=True)))
-
 def options(opt):
     opt.load("wcb")
 
@@ -29,4 +25,4 @@ def configure(cfg):
 
 def build(bld):
     bld.load('wcb')
-    bld.smplpkg('WireCellGenKokkos', use='WCT WireCellUtil WireCellIface WireCellGen JSONCPP BOOST EIGEN FFTW KOKKOS')
+    bld.smplpkg('WireCellGenKokkos', use='WCT WireCellUtil WireCellIface WireCellGen JSONCPP BOOST EIGEN FFTW KOKKOS CUDA')

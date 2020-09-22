@@ -36,7 +36,7 @@ extern double g_set_sampling_part5;
 
 extern size_t g_total_sample_size;
 
-// bool Kokkos::GausDiffTimeCompare::operator()(const std::shared_ptr<Kokkos::GaussianDiffusion>& lhs, const std::shared_ptr<Kokkos::GaussianDiffusion>& rhs) const
+// bool GenKokkos::GausDiffTimeCompare::operator()(const std::shared_ptr<GenKokkos::GaussianDiffusion>& lhs, const std::shared_ptr<GenKokkos::GaussianDiffusion>& rhs) const
 // {
 //   if (lhs->depo_time() == rhs->depo_time()) {
 //     if (lhs->depo_x() == lhs->depo_x()) {
@@ -48,32 +48,7 @@ extern size_t g_total_sample_size;
 // }
 
 
-
-template <class GeneratorPool>
-struct generate_random {
-  Kokkos::View<uint64_t*> vals;
-
-  GeneratorPool rand_pool;
-
-  int samples;
-
-  generate_random(Kokkos::View<uint64_t*> vals_, GeneratorPool rand_pool_, int samples_)
-      : vals(vals_), rand_pool(rand_pool_), samples(samples_) {}
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(int i) const {
-    typename GeneratorPool::generator_type rand_gen = rand_pool.get_state();
-
-    for (int k = 0; k < samples; k++)
-      vals(i * samples + k) = rand_gen.urand64();
-
-    rand_pool.free_state(rand_gen);
-  }
-};
-
-
-
-WireCell::Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
+GenKokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pimpos, const Binning& tbins,
                                       double nsigma, IRandom::pointer fluctuate,
                                       ImpactDataCalculationStrategy calcstrat)
     : m_pimpos(pimpos)
@@ -91,11 +66,11 @@ WireCell::Kokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pim
 }
 
 
-//#ifdef HAVE_CUDA_INC    
-WireCell::Kokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
+#ifdef HAVE_CUDA_INC    
+GenKokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
 }
-//#endif    
+#endif    
 
 
 
@@ -127,13 +102,13 @@ void WireCell::Kokkos::BinnedDiffusion_transform::clear_Device() {
 
 
 
-bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
+bool GenKokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, double sigma_time, double sigma_pitch)
 {
 
     const double center_time = depo->time();
     const double center_pitch = m_pimpos.distance(depo->pos());
 
-    WireCell::Kokkos::GausDesc time_desc(center_time, sigma_time);
+    GenKokkos::GausDesc time_desc(center_time, sigma_time);
     {
         double nmin_sigma = time_desc.distance(m_tbins.min());
         double nmax_sigma = time_desc.distance(m_tbins.max());
@@ -152,7 +127,7 @@ bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, doubl
 
     auto ibins = m_pimpos.impact_binning();
 
-    WireCell::Kokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
+    GenKokkos::GausDesc pitch_desc(center_pitch, sigma_pitch);
     {
         double nmin_sigma = pitch_desc.distance(ibins.min());
         double nmax_sigma = pitch_desc.distance(ibins.max());
@@ -186,7 +161,7 @@ bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, doubl
     return true;
 }
 
-// void Kokkos::BinnedDiffusion_transform::add(std::shared_ptr<GaussianDiffusion> gd, int bin)
+// void GenKokkos::BinnedDiffusion_transform::add(std::shared_ptr<GaussianDiffusion> gd, int bin)
 // {
 //     ImpactData::mutable_pointer idptr = nullptr;
 //     auto it = m_impacts.find(bin);
@@ -200,7 +175,7 @@ bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, doubl
 //     idptr->add(gd);
 //     if (false) {                           // debug
 //         auto mm = idptr->span();
-//         cerr << "Kokkos::BinnedDiffusion_transform: add: "
+//         cerr << "GenKokkos::BinnedDiffusion_transform: add: "
 //              << " poffoset="<<gd->poffset_bin()
 //              << " toffoset="<<gd->toffset_bin()
 //              << " charge=" << gd->depo()->charge()/units::eplus << " eles"
@@ -210,7 +185,7 @@ bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, doubl
 //     //m_diffs.push_back(gd);
 // }
 
-// void Kokkos::BinnedDiffusion_transform::erase(int begin_impact_number, int end_impact_number)
+// void GenKokkos::BinnedDiffusion_transform::erase(int begin_impact_number, int end_impact_number)
 // {
 //     for (int bin=begin_impact_number; bin<end_impact_number; ++bin) {
 // 	m_impacts.erase(bin);
@@ -218,7 +193,7 @@ bool WireCell::Kokkos::BinnedDiffusion_transform::add(IDepo::pointer depo, doubl
 // }
 
 
-void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
+void GenKokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<Eigen::SparseMatrix<float>* >& vec_spmatrix, std::vector<int>& vec_impact){
   const auto ib = m_pimpos.impact_binning();
 
   // map between reduced impact # to array # 
@@ -313,7 +288,7 @@ void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_matrix(std::vector<
 }
 
 // a new function to generate the result for the entire frame ... 
-void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
+void GenKokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vector<std::tuple<int,int, double> > >& vec_vec_charge, std::vector<int>& vec_impact){
 
   double wstart, wend, wstart2, wend2;
 
@@ -450,7 +425,7 @@ void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std
 }
 
 
-// WireCell::Kokkos::ImpactData::pointer Kokkos::BinnedDiffusion_transform::impact_data(int bin) const
+// GenKokkos::ImpactData::pointer GenKokkos::BinnedDiffusion_transform::impact_data(int bin) const
 // {
 //     const auto ib = m_pimpos.impact_binning();
 //     if (! ib.inbounds(bin)) {
@@ -475,7 +450,7 @@ void WireCell::Kokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std
 
 
 static
-std::pair<double,double> gausdesc_range(const std::vector<WireCell::Kokkos::GausDesc> gds, double nsigma)
+std::pair<double,double> gausdesc_range(const std::vector<GenKokkos::GausDesc> gds, double nsigma)
 {
     int ncount = -1;
     double vmin=0, vmax=0;
@@ -495,16 +470,16 @@ std::pair<double,double> gausdesc_range(const std::vector<WireCell::Kokkos::Gaus
     return std::make_pair(vmin,vmax);
 }
 
-std::pair<double,double> WireCell::Kokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
+std::pair<double,double> GenKokkos::BinnedDiffusion_transform::pitch_range(double nsigma) const
 {
-    std::vector<WireCell::Kokkos::GausDesc> gds;
+    std::vector<GenKokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->pitch_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> WireCell::Kokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
+std::pair<int,int> GenKokkos::BinnedDiffusion_transform::impact_bin_range(double nsigma) const
 {
     const auto ibins = m_pimpos.impact_binning();
     auto mm = pitch_range(nsigma);
@@ -512,16 +487,16 @@ std::pair<int,int> WireCell::Kokkos::BinnedDiffusion_transform::impact_bin_range
                           std::min(ibins.bin(mm.second)+1, ibins.nbins()));
 }
 
-std::pair<double,double> WireCell::Kokkos::BinnedDiffusion_transform::time_range(double nsigma) const
+std::pair<double,double> GenKokkos::BinnedDiffusion_transform::time_range(double nsigma) const
 {
-    std::vector<WireCell::Kokkos::GausDesc> gds;
+    std::vector<GenKokkos::GausDesc> gds;
     for (auto diff : m_diffs) {
         gds.push_back(diff->time_desc());
     }
     return gausdesc_range(gds, nsigma);
 }
 
-std::pair<int,int> WireCell::Kokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
+std::pair<int,int> GenKokkos::BinnedDiffusion_transform::time_bin_range(double nsigma) const
 {
     auto mm = time_range(nsigma);
     return std::make_pair(std::max(m_tbins.bin(mm.first),0),

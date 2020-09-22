@@ -1,0 +1,179 @@
+#include <Kokkos_Core.hpp>
+
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <thread>
+#include <vector>
+
+using Scalar = float;
+using Index = int;
+using Layout = Kokkos::LayoutLeft;
+using matrix_type = typename Kokkos::View<Scalar **, Layout>;
+
+matrix_type gen_2D_view(const int N0, const int N1, const Scalar val = 0)
+{
+    matrix_type ret("ret", N0, N1);
+    Kokkos::parallel_for("setRet", Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Left>>({0, 0}, {N0, N1}),
+                         KOKKOS_LAMBDA(const int &i0, const int &i1) { ret(i0, i1) = val; });
+    return ret;
+}
+
+int scatter_add(matrix_type grid, const matrix_type patch, const int x, const int y)
+{
+    // TODO size checks
+
+    size_t N0 = patch.extent(0);
+    size_t N1 = patch.extent(1);
+
+    Kokkos::parallel_for(
+        "scatter_add", Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Left>>({0, 0}, {N0, N1}),
+        KOKKOS_LAMBDA(const int &i, const int &j) { Kokkos::atomic_add(&grid(x + i, y + j), patch(i, j)); });
+
+    // for(size_t i=0; i<N0; ++i) {
+    //     for(size_t j=0; j<N1; ++j) {
+    //         grid(x + i, y + j) += patch(i, j);
+    //     }
+    // }
+
+    return 0;
+}
+
+std::string dump(const matrix_type &A, const size_t length_limit = 20)
+{
+    std::stringstream ss;
+
+    matrix_type::HostMirror h_A = Kokkos::create_mirror_view(A);
+    Kokkos::deep_copy(h_A, A);
+
+    size_t N0 = A.extent(0);
+    size_t N1 = A.extent(1);
+    bool print_dot0 = true;
+    for (size_t i = 0; i < N0; ++i) {
+        if (i > length_limit && i < N0 - length_limit) {
+            if (print_dot0) {
+                ss << "... \n";
+                print_dot0 = false;
+            }
+            continue;
+        }
+
+        bool print_dot1 = true;
+        for (size_t j = 0; j < N1; ++j) {
+            if (j > length_limit && j < N1 - length_limit) {
+                if (print_dot1) {
+                    ss << "... ";
+                    print_dot1 = false;
+                }
+
+                continue;
+            }
+            ss << h_A(i, j) << " ";
+        }
+        ss << std::endl;
+    }
+
+    return ss.str();
+}
+
+double quick_check(const int N0 = 20, const int N1 = 20, const int M0 = 2, const int M1 = 5, const int Npatch = 4,
+                   const bool verbose = true, const int wait = 0)
+{
+    matrix_type grid("grid", N0, N1);
+
+    auto A = gen_2D_view(M0, M1, 1);
+
+    if (verbose) {
+        std::cout << "input grid: \n" << dump(grid) << std::endl;
+        std::cout << "A: \n" << dump(A) << std::endl;
+    }
+    // std::srand(std::time(nullptr)); // current time as seed
+    std::srand(0);  // using 0 as seed, repeatable
+
+    typedef Kokkos::View<Index *> ViewVectorIndexType;
+    ViewVectorIndexType vec_x("vec_x", Npatch);
+    ViewVectorIndexType vec_y("vec_y", Npatch);
+    ViewVectorIndexType::HostMirror h_vec_x = Kokkos::create_mirror_view(vec_x);
+    ViewVectorIndexType::HostMirror h_vec_y = Kokkos::create_mirror_view(vec_y);
+    for (int i = 0; i < Npatch; ++i) {
+        h_vec_x(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N0 - M0));
+        h_vec_y(i) = (Index)(1.0 * std::rand() / RAND_MAX * (N1 - M1));
+    }
+
+    // Deep copy host views to device views.
+    Kokkos::deep_copy(vec_x, h_vec_x);
+    Kokkos::deep_copy(vec_y, h_vec_y);
+
+    Kokkos::Timer timer;
+    Kokkos::parallel_for("ScAdd",
+                         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Left>>({0, 0, 0}, {Npatch, M0, M1}),
+                         KOKKOS_LAMBDA(const int &p, const int &i, const int &j) {
+                             // auto patch = gen_2D_view(M0, M1, 1);
+                             // std::this_thread::sleep_for(std::chrono::microseconds(wait));
+                             auto x = vec_x[p];
+                             auto y = vec_y[p];
+                             Kokkos::atomic_add(&grid(x + i, y + j), A(i, j));
+                         });
+    Kokkos::fence();
+    double time = timer.seconds();
+
+    if (verbose) {
+        std::cout << "output grid: \n" << dump(grid) << std::endl;
+        std::ofstream fout("grid.csv");
+        fout << dump(grid, INT_MAX);
+
+        // sum check
+        matrix_type::HostMirror h_grid = Kokkos::create_mirror_view(grid);
+        Kokkos::deep_copy(h_grid, grid);
+        int N_expect = Npatch * M0 *M1;
+        int N_test = 0;
+        for (size_t i = 0; i < h_grid.extent(0); ++i) {
+            for (size_t j = 0; j < h_grid.extent(1); ++j) {
+                N_test += h_grid(i,j);
+            }
+        }
+
+        std::cout << "Test:" << N_test << ", expect: " << N_expect << std::endl;
+        if(N_expect == N_test) {
+            std::cout << "Sum check OK:" << std::endl;
+        } else {
+            std::cout << "Sum check fail." << std::endl;
+        }
+    }
+
+    return time;
+}
+
+int main(int argc, char *argv[])
+{
+    int npatch = 100;
+    int nrep = 10;
+    bool verbose = false;
+
+    if (argc > 1) {
+        npatch = atoi(argv[1]);
+    }
+
+    if (argc > 2) {
+        nrep = atoi(argv[2]);
+    }
+
+    if (argc > 3) {
+        verbose = (bool) atoi(argv[3]);
+    }
+
+    std::cout << "npatch: " << npatch << " nrep: " << nrep << std::endl;
+    double time = 0;
+    Kokkos::initialize(argc, argv);
+    {
+        for (int rep = 0; rep < nrep; ++rep) {
+            time += quick_check(1000, 6000, 15, 30, npatch, verbose);
+        }
+        std::cout << "Kokkos::Timer: "
+                  << " " << time << std::endl;
+    }
+    Kokkos::finalize();
+}
