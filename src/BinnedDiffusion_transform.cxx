@@ -5,6 +5,7 @@
 #include <iostream>             // debug
 #include <omp.h>
 #include <unordered_map>
+#include <cmath>
 
 
 #include <Kokkos_Core.hpp>
@@ -15,11 +16,18 @@
 
 
 
+#define FULL_MASK 0xffffffff
+#define RANDOM_BLOCK_SIZE (1024*1024)
+#define RANDOM_BLOCK_NUM 512
+#define MAX_RANDOM_LENGTH (RANDOM_BLOCK_NUM*RANDOM_BLOCK_SIZE)
+#define PI 3.14159265358979323846
+
+
 
 using namespace std;
 
-//using namespace WireCell;
-namespace wc = WireCell::Kokkos;
+using namespace WireCell;
+//namespace wc = WireCell::Kokkos;
 //using namespace Kokkos;
 
 double g_get_charge_vec_time_part1 = 0.0;
@@ -35,6 +43,58 @@ extern double g_set_sampling_part4;
 extern double g_set_sampling_part5;
 
 extern size_t g_total_sample_size;
+
+
+
+template <class GeneratorPool>
+struct generate_random {
+    Kokkos::View<double*> normals; // Normal distribution N(0,1)
+    GeneratorPool rand_pool1;
+    GeneratorPool rand_pool2;
+    int samples;
+    uint64_t range_min;
+    uint64_t range_max1 = 0;
+    uint64_t range_max2 = 0;
+
+
+    generate_random(Kokkos::View<double*> normals_, GeneratorPool rand_pool1_, GeneratorPool rand_pool2_, int samples_)
+        : normals(normals_), rand_pool1(rand_pool1_), rand_pool2(rand_pool2_), samples(samples_), range_min(1) {
+        //range_max1 = rand_pool1.get_state().max();
+        //range_max2 = rand_pool2.get_state().max();
+        //range_max1 = 0xffffffffffffffffULL-1;
+        //range_max2 = range_max2;
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(int i) const {
+        /*
+        typename GeneratorPool::generator_type rand_gen1 = rand_pool1.get_state();
+        typename GeneratorPool::generator_type rand_gen2 = rand_pool2.get_state();
+
+        for (int k = 0; k < samples; k++) {
+            double u1 = rand_gen1.urand64(range_min, range_max1) / range_max1; 
+            double u2 = rand_gen2.urand64(range_min, range_max2) / range_max2; 
+            normals(i * samples + k)     = sqrt(-2*log(u1)) * cos(2*PI*u2);
+            normals(i * samples + k + 1) = sqrt(-2*log(u1)) * sin(2*PI*u2);
+        }
+
+        rand_pool1.free_state(rand_gen1);
+        rand_pool2.free_state(rand_gen2);
+        */
+    }
+   
+};
+
+
+
+
+
+
+
+
+
+
+
 
 // bool GenKokkos::GausDiffTimeCompare::operator()(const std::shared_ptr<GenKokkos::GaussianDiffusion>& lhs, const std::shared_ptr<GenKokkos::GaussianDiffusion>& rhs) const
 // {
@@ -60,35 +120,33 @@ GenKokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pi
     , m_outside_pitch(0)
     , m_outside_time(0)
 {
-//#ifdef HAVE_CUDA_INC    
     init_Device();
-//#endif    
 }
 
 
-#ifdef HAVE_CUDA_INC    
 GenKokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
 }
-#endif    
 
 
 
-void WireCell::Kokkos::BinnedDiffusion_transform::init_Device() {
-  //CUDA_SAFE_CALL( cudaMalloc(&m_pvec_D, MAX_NPSS_DEVICE * sizeof(double)) );
-  //CUDA_SAFE_CALL( cudaMalloc(&m_tvec_D, MAX_NTSS_DEVICE * sizeof(double)) );
-  //CUDA_SAFE_CALL( cudaMalloc(&m_patch_D, MAX_NPSS_DEVICE * MAX_NTSS_DEVICE * sizeof(float)) );
-  //CUDA_SAFE_CALL( cudaMalloc(&m_rand_D, MAX_RANDOM_LENGTH * sizeof(float)) );
+void GenKokkos::BinnedDiffusion_transform::init_Device() {
 
-  //CURAND_SAFE_CALL(curandCreateGenerator(&m_Gen,CURAND_RNG_PSEUDO_DEFAULT));
-  //CURAND_SAFE_CALL(curandSetPseudoRandomGeneratorSeed(m_Gen, 0));
-  //CURAND_SAFE_CALL(curandGenerateNormal(m_Gen, m_rand_D, MAX_RANDOM_LENGTH, 0.0, 1.0));
 
-  //tempVec = new double[1024];
+    size_t size = RANDOM_BLOCK_NUM/2;
+    size_t samples = RANDOM_BLOCK_SIZE;
+    int seed = 2020;
+
+    Kokkos::Random_XorShift64_Pool<> rand_pool1(seed);
+    //Kokkos::Random_XorShift64_Pool<> rand_pool2(seed+1);
+    //Kokkos::DualView<double*> normals("Normals", size * samples);
+
+    //Kokkos::parallel_for(size, generate_random<Kokkos::Random_XorShift64_Pool<> >(normals.d_view, rand_pool1, rand_pool2, samples));
+
 }
 
 
-void WireCell::Kokkos::BinnedDiffusion_transform::clear_Device() {
+void GenKokkos::BinnedDiffusion_transform::clear_Device() {
   //CUDA_SAFE_CALL(cudaFree(m_pvec_D));
   //CUDA_SAFE_CALL(cudaFree(m_tvec_D));
   //CUDA_SAFE_CALL(cudaFree(m_patch_D));
