@@ -1,5 +1,5 @@
-#ifndef WIRECELLGEN_GaussianDiffusion
-#define WIRECELLGEN_GaussianDiffusion
+#ifndef WIRECELL_GENKOKKOS_GaussianDiffusion
+#define WIRECELL_GENKOKKOS_GaussianDiffusion
 
 #include "WireCellUtil/Array.h"
 #include "WireCellUtil/Binning.h"
