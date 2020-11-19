@@ -26,3 +26,7 @@ def configure(cfg):
 def build(bld):
     bld.load('wcb')
     bld.smplpkg('WireCellGenKokkos', use='WCT SPDLOG JSONCPP BOOST EIGEN FFTW KOKKOS CUDA')
+    bld.install_files('${PREFIX}/share/wirecell',
+                        bld.path.ant_glob("cfg/pgrapher/common/**/*.jsonnet") +
+                        bld.path.ant_glob("cfg/pgrapher/experiment/**/*.jsonnet"),
+                        relative_trick=True)
