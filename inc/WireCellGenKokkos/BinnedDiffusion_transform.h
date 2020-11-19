@@ -12,7 +12,6 @@
 #include <Eigen/Sparse>
 
 #include "config.h"
-#undef HAVE_CUDA_INC
 #ifdef HAVE_CUDA_INC
 #include <cuda.h>
 #include <curand.h>

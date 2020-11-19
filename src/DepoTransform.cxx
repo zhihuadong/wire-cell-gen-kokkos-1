@@ -47,7 +47,7 @@
 #include "WireCellUtil/Units.h"
 #include "WireCellUtil/Point.h"
 
-WIRECELL_FACTORY(DepoTransform, WireCell::GenKokkos::DepoTransform, WireCell::IDepoFramer, WireCell::IConfigurable)
+WIRECELL_FACTORY(GenKokkosDepoTransform, WireCell::GenKokkos::DepoTransform, WireCell::IDepoFramer, WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace std;
