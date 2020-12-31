@@ -95,5 +95,5 @@ export WIRECELL_PATH=<path-to-wire-cell-gen-kokkos-install>:$WIRECELL_FQ_DIR
 
 ### run
 
- - input: a root file (refered to as `g4.root` below) containing Geant4 energy depo (`sim::SimEnergyDeposits`)
+ - input: a root file (refered to as [`g4.root`](https://github.com/hep-cce2/PPSwork/blob/master/Wire-Cell/examples/g4.root) below) containing Geant4 energy depo (`sim::SimEnergyDeposits`)
  - in the example folder: `lar -n 1 -c sim.fcl g4.root`
