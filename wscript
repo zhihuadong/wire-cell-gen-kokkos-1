@@ -7,7 +7,7 @@ APPNAME = 'Junk'
 from waflib.extras import wcb
 wcb.package_descriptions.append(("WCT", dict(
     incs=["WireCellUtil/Units.h"],
-    libs=["WireCellUtil","gomp"], mandatory=True)))
+    libs=["WireCellUtil", "WireCellIface","gomp"], mandatory=True)))
 
 def options(opt):
     opt.load("wcb")
@@ -25,4 +25,8 @@ def configure(cfg):
 
 def build(bld):
     bld.load('wcb')
-    bld.smplpkg('WireCellGenKokkos', use='WCT WireCellUtil WireCellIface WireCellGen JSONCPP BOOST EIGEN FFTW KOKKOS CUDA')
+    bld.smplpkg('WireCellGenKokkos', use='WCT SPDLOG JSONCPP BOOST EIGEN FFTW KOKKOS CUDA')
+    bld.install_files('${PREFIX}/share/wirecell',
+                        bld.path.ant_glob("cfg/pgrapher/common/**/*.jsonnet") +
+                        bld.path.ant_glob("cfg/pgrapher/experiment/**/*.jsonnet"),
+                        relative_trick=True)
