@@ -15,7 +15,8 @@
 #include <impl/Kokkos_Timer.hpp>
 
 
-
+#define MAX_NPSS_DEVICE 1000
+#define MAX_NTSS_DEVICE 1000
 #define FULL_MASK 0xffffffff
 #define RANDOM_BLOCK_SIZE (1024*1024)
 #define RANDOM_BLOCK_NUM 512
@@ -61,13 +62,13 @@ struct generate_random {
         : normals(normals_), rand_pool1(rand_pool1_), rand_pool2(rand_pool2_), samples(samples_), range_min(1) {
         //range_max1 = rand_pool1.get_state().max();
         //range_max2 = rand_pool2.get_state().max();
-        //range_max1 = 0xffffffffffffffffULL-1;
-        //range_max2 = range_max2;
+        range_max1 = 0xffffffffffffffffULL-1;
+        range_max2 = range_max1;
     }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(int i) const {
-        /*
+        //*
         typename GeneratorPool::generator_type rand_gen1 = rand_pool1.get_state();
         typename GeneratorPool::generator_type rand_gen2 = rand_pool2.get_state();
 
@@ -80,7 +81,7 @@ struct generate_random {
 
         rand_pool1.free_state(rand_gen1);
         rand_pool2.free_state(rand_gen2);
-        */
+        //*/
     }
    
 };
@@ -138,10 +139,11 @@ void GenKokkos::BinnedDiffusion_transform::init_Device() {
     int seed = 2020;
 
     Kokkos::Random_XorShift64_Pool<> rand_pool1(seed);
-    //Kokkos::Random_XorShift64_Pool<> rand_pool2(seed+1);
+    Kokkos::Random_XorShift64_Pool<> rand_pool2(seed+1);
     //Kokkos::DualView<double*> normals("Normals", size * samples);
+    Kokkos::resize(m_normals, size * samples);
 
-    //Kokkos::parallel_for(size, generate_random<Kokkos::Random_XorShift64_Pool<> >(normals.d_view, rand_pool1, rand_pool2, samples));
+    Kokkos::parallel_for(size, generate_random<Kokkos::Random_XorShift64_Pool<> >(m_normals.d_view, rand_pool1, rand_pool2, samples));
 
 }
 
@@ -404,7 +406,9 @@ void GenKokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vecto
     #ifdef HAVE_CUDA_INC
     diff->set_sampling_CUDA(m_pvec_D, m_tvec_D, m_patch_D, m_rand_D, &m_Gen, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     #else
-    diff->set_sampling(m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
+    //diff->set_sampling(m_pvec, m_tvec, m_patch, m_normals, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
+    diff->set_sampling(m_patch, m_normals, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
+    //diff->set_sampling(m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     #endif
     wend2 = omp_get_wtime();
     g_get_charge_vec_time_part4 += wend2 - wstart2;

@@ -16,6 +16,12 @@
   #include <curand.h>
 #endif
 
+#include <Kokkos_Core.hpp>
+#include <Kokkos_DualView.hpp>
+
+#define MAX_NPSS_DEVICE 1000
+#define MAX_NTSS_DEVICE 1000
+
 
 namespace WireCell {
     namespace GenKokkos {
@@ -105,6 +111,15 @@ namespace WireCell {
             /// Gaussian.
             
             void set_sampling(const Binning& tbin, const Binning& pbin,
+                              double nsigma = 3.0, 
+                              IRandom::pointer fluctuate=nullptr, 
+                              unsigned int weightstrat = 1/*see BinnedDiffusion ImpactDataCalculationStrategy*/);
+            void set_sampling(
+                              //Kokkos::DualView<double[MAX_NPSS_DEVICE]>& pvec,
+                              //Kokkos::DualView<double[MAX_NTSS_DEVICE]>& tvec,
+                              Kokkos::DualView<float[MAX_NPSS_DEVICE*MAX_NTSS_DEVICE]>& patch,
+                              Kokkos::DualView<double*>& normals,
+                              const Binning& tbin, const Binning& pbin,
                               double nsigma = 3.0, 
                               IRandom::pointer fluctuate=nullptr, 
                               unsigned int weightstrat = 1/*see BinnedDiffusion ImpactDataCalculationStrategy*/);

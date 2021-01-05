@@ -12,11 +12,12 @@
 #include <Eigen/Sparse>
 
 #include "config.h"
-#undef HAVE_CUDA_INC
-#ifdef HAVE_CUDA_INC
-  #include <cuda.h>
-  #include <curand.h>
-#endif
+
+#include <Kokkos_Core.hpp>
+#include <Kokkos_DualView.hpp>
+
+#define MAX_NPSS_DEVICE 1000
+#define MAX_NTSS_DEVICE 1000
 
 
 namespace WireCell {
@@ -131,13 +132,16 @@ namespace WireCell {
             int m_outside_pitch;
             int m_outside_time;
 
-            #ifdef HAVE_CUDA_INC
-            double* m_pvec_D;
-            double* m_tvec_D;
-            float* m_patch_D;
-            float* m_rand_D;
-            curandGenerator_t m_Gen;
-            #endif
+            //double* m_pvec_D;
+            //double* m_tvec_D;
+            //float* m_patch_D;
+            //float* m_rand_D;
+            //curandGenerator_t m_Gen;
+
+            //Kokkos::DualView<double[MAX_NPSS_DEVICE]> m_pvec;
+            //Kokkos::DualView<double[MAX_NTSS_DEVICE]> m_tvec;
+            Kokkos::DualView<float[MAX_NPSS_DEVICE*MAX_NTSS_DEVICE]> m_patch;
+            Kokkos::DualView<double*> m_normals;
 
         private:
             //#ifdef HAVE_CUDA_INC
