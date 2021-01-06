@@ -1,0 +1,36 @@
+#!/bin/bash
+
+if ! type -p cmake >& /dev/null
+then
+  echo "CMake not available."
+  exit 1
+fi
+
+top_dir="$(cd $(dirname ${BASH_SOURCE[0]}) >&/dev/null && pwd)"
+cmake_dir_cxx=$top_dir/.cmake-cxx
+cmake_dir_kokkos=$top_dir/.cmake-kokkos
+build_dir_cxx=$top_dir/build/cxx
+build_dir_kokkos=$top_dir/build/kokkos
+mkdir -p $build_dir_cxx $build_dir_kokkos
+
+build_cmds="$@"
+
+echo
+echo "======================="
+echo "Building CXX components"
+echo "======================="
+echo
+cd $build_dir_cxx
+[ ! -f Makefile ] && \
+    (cmake $cmake_dir_cxx -DCMAKE_CXX_EXTENSIONS=Off || exit 2)
+make $build_cmds || exit 3
+
+echo
+echo "=========================="
+echo "Building Kokkos components"
+echo "=========================="
+echo
+cd $build_dir_kokkos
+[ ! -f Makefile ] && \
+    (cmake $cmake_dir_kokkos -DCMAKE_CXX_EXTENSIONS=Off -DCMAKE_CXX_COMPILER=$(type -p nvcc_wrapper) || exit 4)
+make $build_cmds || exit 5
