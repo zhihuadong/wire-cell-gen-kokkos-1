@@ -7,7 +7,6 @@
 
 #include "WireCellIface/IConfigurable.h"
 #include "WireCellIface/IFrameFilter.h"
-#include "WireCellUtil/Logging.h"
 
 namespace WireCell {
     namespace GenKokkos {
@@ -31,9 +30,6 @@ namespace WireCell {
 
            private:
             Configuration m_cfg;  /// copy of configuration
-
-            /// SPD logger
-            Log::logptr_t log;
         };
     }  // namespace GenKokkos
 }  // namespace WireCell

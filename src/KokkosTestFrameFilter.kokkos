@@ -2,17 +2,12 @@
 
 #include "WireCellGenKokkos/KokkosTestFrameFilter.h"
 
-#include "WireCellUtil/NamedFactory.h"
 #include "WireCellUtil/Exceptions.h"
-
-WIRECELL_FACTORY(KokkosTestFrameFilter, WireCell::GenKokkos::KokkosTestFrameFilter, WireCell::IFrameFilter,
-                 WireCell::IConfigurable)
 
 using namespace WireCell;
 using namespace std;
 
 GenKokkos::KokkosTestFrameFilter::KokkosTestFrameFilter()
-  : log(Log::logger("kokkos"))
 {
 }
 
@@ -30,7 +25,7 @@ bool GenKokkos::KokkosTestFrameFilter::operator()(const IFrame::pointer &inframe
 {
     outframe = inframe;
 
-    log->debug("========== KokkosTestFrameFilter: start ==========");
+    std::cout << "========== KokkosTestFrameFilter: start ==========" << std::endl;
 
     try {
         int N = 4096;
@@ -120,7 +115,7 @@ bool GenKokkos::KokkosTestFrameFilter::operator()(const IFrame::pointer &inframe
         cerr << errstr(e) << endl;
     }
 
-    log->debug("========== KokkosTestFrameFilter: end ==========");
+    std::cout << "========== KokkosTestFrameFilter: end ==========" << std::endl;
 
     return true;
 }
