@@ -1,0 +1,50 @@
+#include <Kokkos_Core.hpp>
+
+#include "WireCellGenKokkos/KokkosEnv.h"
+
+#include "WireCellUtil/NamedFactory.h"
+#include "WireCellUtil/Exceptions.h"
+
+#include <iostream>
+
+WIRECELL_FACTORY(KokkosEnv, WireCell::GenKokkos::KokkosEnv, WireCell::ITerminal)
+
+using namespace WireCell;
+using namespace std;
+
+bool GenKokkos::KokkosEnv::kokkos_initialized = false;
+
+GenKokkos::KokkosEnv::KokkosEnv()
+  : log(Log::logger("env"))
+{
+    log->debug("Kokkos::initializing");
+    if (!kokkos_initialized) {
+        try {
+            Kokkos::initialize();
+            kokkos_initialized = true;
+        }
+        catch (Exception& e) {
+            cerr << errstr(e) << endl;
+            THROW(RuntimeError() << errmsg{"Kokkos::initialize() FAILED!"});
+        }
+    }
+    log->debug("Kokkos::initialized");
+}
+
+GenKokkos::KokkosEnv::~KokkosEnv() {}
+
+void GenKokkos::KokkosEnv::finalize()
+{
+    log->debug("Kokkos::finalizing");
+    if (kokkos_initialized) {
+        try {
+            Kokkos::finalize();
+            kokkos_initialized = false;
+        }
+        catch (Exception& e) {
+            cerr << errstr(e) << endl;
+            THROW(RuntimeError() << errmsg{"Kokkos::finalize() FAILED!"});
+        }
+    }
+    log->debug("Kokkos::finalized");
+}
