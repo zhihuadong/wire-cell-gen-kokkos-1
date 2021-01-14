@@ -24,6 +24,9 @@ WireCell::Configuration GenKokkos::KokkosTestFrameFilter::default_configuration(
 bool GenKokkos::KokkosTestFrameFilter::operator()(const IFrame::pointer &inframe, IFrame::pointer &outframe)
 {
     outframe = inframe;
+    if(!inframe) {
+        return true;
+    }
 
     std::cout << "========== KokkosTestFrameFilter: start ==========" << std::endl;
 
