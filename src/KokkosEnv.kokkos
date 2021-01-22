@@ -1,0 +1,46 @@
+#include <Kokkos_Core.hpp>
+
+#include "WireCellGenKokkos/KokkosEnv.h"
+
+#include "WireCellUtil/Exceptions.h"
+
+#include <iostream>
+
+using namespace WireCell;
+using namespace std;
+
+bool GenKokkos::KokkosEnv::kokkos_initialized = false;
+
+GenKokkos::KokkosEnv::KokkosEnv()
+{
+    std::cout << "Kokkos::initializing" << std::endl;
+    if (!kokkos_initialized) {
+        try {
+            Kokkos::initialize();
+            kokkos_initialized = true;
+        }
+        catch (Exception& e) {
+            cerr << errstr(e) << endl;
+            THROW(RuntimeError() << errmsg{"Kokkos::initialize() FAILED!"});
+        }
+    }
+    std::cout << "Kokkos::initialized" << std::endl;
+}
+
+GenKokkos::KokkosEnv::~KokkosEnv() {}
+
+void GenKokkos::KokkosEnv::finalize()
+{
+    std::cout << "Kokkos::finalizing" << std::endl;
+    if (kokkos_initialized) {
+        try {
+            Kokkos::finalize();
+            kokkos_initialized = false;
+        }
+        catch (Exception& e) {
+            cerr << errstr(e) << endl;
+            THROW(RuntimeError() << errmsg{"Kokkos::finalize() FAILED!"});
+        }
+    }
+    std::cout << "Kokkos::finalized" << std::endl;
+}

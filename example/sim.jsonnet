@@ -125,6 +125,15 @@ local hio_truth = [g.pnode({
     for n in std.range(0, std.length(tools.anodes) - 1)
     ];
 
+local kokkos_test = [g.pnode({
+      type: 'KokkosTestFrameFilter',
+      name: 'kokkos_test%d' % n,
+      data: {
+      },  
+    }, nin=1, nout=1),
+    for n in std.range(0, std.length(tools.anodes) - 1)
+    ];
+
 local hio_orig = [g.pnode({
       type: 'HDF5FrameTap',
       name: 'hio_orig%d' % n,
@@ -160,6 +169,7 @@ local reco_fork = [
     g.pipeline([
                 bagger[n],
                 sn_pipes[n],
+                kokkos_test[n],
                 hio_orig[n],
                 // nf_pipes[n],
                 // sp_pipes[n],
@@ -238,7 +248,11 @@ local app = {
   },
 };
 
+local env = {
+    type: "KokkosEnv",
+};
+
 
 // Finally, the configuration sequence which is emitted.
 
-g.uses(graph) + [app]
+[env] + g.uses(graph) + [app]
