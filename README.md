@@ -81,17 +81,29 @@ Kokkos::OpenMP::initialize WARNING: OMP_PROC_BIND environment variable not set
 git clone https://github.com/WireCell/wire-cell-data.git
 ```
 
-### add `wire-cell-data` and `wire-cell-gen-kokkos` to $WIRECELL_PATH
+### $WIRECELL_PATH
 
 `wire-cell` searches pathes in this env var for configuration and data files.
 
-for bash, run something like this below (`$WIRECELL_FQ_DIR` is a variable defined developing in Kyle's container or `setup wirecell` in a Fermilab ups system, current version is `0.14.0`, may upgrade in the future. `<path-to-wire-cell-data>` refer to the git repository cloned from the previous step; `<path-to-wire-cell-gen-kokkos-install>` refer to the install path of the `wire-cell-gen-kokkos` standalone package.)
+for bash, run something like this below:
 
 ```
-export WIRECELL_PATH=$WIRECELL_FQ_DIR/wirecell-0.14.0/cfg:$WIRECELL_FQ_DIR
-export WIRECELL_PATH=<path-to-wire-cell-data>:$WIRECELL_FQ_DIR
-export WIRECELL_PATH=<path-to-wire-cell-gen-kokkos-install>:$WIRECELL_FQ_DIR
+export WIRECELL_PATH=$WIRECELL_FQ_DIR/wirecell-0.14.0/cfg # main cfg
+export WIRECELL_PATH=$WIRECELL_DATA_PATH:$WIRECELL_PATH # data
+export WIRECELL_PATH=$WIRECELL_GEN_KOKKOS_INSTALL_PATH/share/wirecell/cfg:$WIRECELL_PATH # gen-kokkos
+
 ```
+Variable meaning:
+ - `$WIRECELL_FQ_DIR` is a variable defined developing in Kyle's container or `setup wirecell` in a Fermilab ups system, current version is `0.14.0`, may upgrade in the future.
+ - `WIRECELL_DATA_PATH` refer to the git repository cloned from the previous step
+ - `WIRECELL_GEN_KOKKOS_INSTALL_PATH` refer to the install path of the `wire-cell-gen-kokkos` standalone package.
+
+### $LD_LIBRARY_PATH
+
+```
+export LD_LIBRARY_PATH=$WIRECELL_GEN_KOKKOS_INSTALL_PATH/lib64/:$LD_LIBRARY_PATH
+```
+
 
 ### run
 
