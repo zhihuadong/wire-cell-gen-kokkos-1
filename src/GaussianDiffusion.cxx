@@ -43,7 +43,8 @@ struct kokkos_patching_functor {
     kokkos_patching_functor(double* pvec_, double* tvec_, const int np_, const int nt_, View<float*> patch_, double charge_) 
     : pvec(pvec_), tvec(tvec_), np(np_), nt(nt_), patch(patch_), charge(charge_)
     , patch_sum(0.0)
-    {}
+    {
+    }
 
     // column major
     KOKKOS_INLINE_FUNCTION
@@ -368,7 +369,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(const Binning& tbin, // overall 
 void GenKokkos::GaussianDiffusion::set_sampling(
                                                 //Kokkos::DualView<double[MAX_NPSS_DEVICE]>& pvec_V,
                                                 //Kokkos::DualView<double[MAX_NTSS_DEVICE]>& tvec_V,
-                                                Kokkos::DualView<float[MAX_NPSS_DEVICE*MAX_NTSS_DEVICE]>& patch_V,
+                                                Kokkos::DualView<float*>& patch_V,
                                                 Kokkos::DualView<double*>& normals,
                                                 const Binning& tbin, // overall time tick binning
                                                 const Binning& pbin, // overall impact position binning
@@ -426,7 +427,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(
 
     wstart = omp_get_wtime();
     // start making the time vs impact patch of charge.
-    //patch_t ret = patch_t::Zero(npss, ntss);
+    m_patch = patch_t::Zero(npss, ntss);
     //double raw_sum=0.0;
 
     const double charge_sign = m_deposition->charge() < 0 ? -1 : 1;
@@ -445,15 +446,17 @@ void GenKokkos::GaussianDiffusion::set_sampling(
     //ret *= m_deposition->charge() / raw_sum;
     
     //Kokkos::DualView<float*> patch("patch", npss*ntss);
-    kokkos_patching_functor functor(pvec.data(), tvec.data(), npss, ntss, patch_V.d_view,  charge);
+    kokkos_patching_functor functor(pvec.data(), tvec.data(), npss, ntss, patch_V.d_view, charge);
     using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
     MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{(long int)npss, (long int)ntss}});
 
     Kokkos::parallel_for("Loop1", mdpolicy_2d, functor);
+    //Kokkos::fence();
     float sum =0.0;
     Kokkos::parallel_reduce(npss*ntss,functor, sum);
     functor.setSum(sum);
     Kokkos::parallel_for("Loop2", npss*ntss, functor);
+    //Kokkos::fence();
 
 
 
@@ -461,9 +464,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(
     wend = omp_get_wtime();
     g_set_sampling_part2 += wend - wstart;
 
-
     //cout << "set_sampling() : npss=" << npss << ", ntss=" << ntss << ", m_deposition->charge() = " << m_deposition->charge() << ", raw_sum=" << raw_sum << endl;
-
 
     wstart = omp_get_wtime();
 
@@ -487,11 +488,10 @@ void GenKokkos::GaussianDiffusion::set_sampling(
         }
     }
 
-    Kokkos::deep_copy(patch_V.h_view, patch_V.d_view);
+    Kokkos::deep_copy(patch_V.h_view, patch_V.d_view); // copy from d_view to h_view
 
     memcpy(m_patch.data(), patch_V.h_view.data(), sizeof(float)*ntss*npss);
 
-    //m_patch = ret;
     wend = omp_get_wtime();
     g_set_sampling_part3 += wend - wstart;
 

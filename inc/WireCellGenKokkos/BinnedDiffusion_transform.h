@@ -20,6 +20,7 @@
 #define MAX_NTSS_DEVICE 1000
 
 
+
 namespace WireCell {
     namespace GenKokkos {
 
@@ -140,7 +141,7 @@ namespace WireCell {
 
             //Kokkos::DualView<double[MAX_NPSS_DEVICE]> m_pvec;
             //Kokkos::DualView<double[MAX_NTSS_DEVICE]> m_tvec;
-            Kokkos::DualView<float[MAX_NPSS_DEVICE*MAX_NTSS_DEVICE]> m_patch;
+            Kokkos::DualView<float*> m_patch;
             Kokkos::DualView<double*> m_normals;
 
         private:

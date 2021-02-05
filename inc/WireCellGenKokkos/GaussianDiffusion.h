@@ -117,7 +117,7 @@ namespace WireCell {
             void set_sampling(
                               //Kokkos::DualView<double[MAX_NPSS_DEVICE]>& pvec,
                               //Kokkos::DualView<double[MAX_NTSS_DEVICE]>& tvec,
-                              Kokkos::DualView<float[MAX_NPSS_DEVICE*MAX_NTSS_DEVICE]>& patch,
+                              Kokkos::DualView<float*>& patch,
                               Kokkos::DualView<double*>& normals,
                               const Binning& tbin, const Binning& pbin,
                               double nsigma = 3.0, 
