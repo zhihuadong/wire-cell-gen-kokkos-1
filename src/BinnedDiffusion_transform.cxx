@@ -121,6 +121,7 @@ GenKokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pi
     , m_outside_pitch(0)
     , m_outside_time(0)
 {
+    Kokkos::realloc(m_patch, MAX_NPSS_DEVICE*MAX_NTSS_DEVICE);
     init_Device();
 }
 
