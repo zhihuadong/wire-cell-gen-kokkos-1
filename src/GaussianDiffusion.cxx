@@ -483,7 +483,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(
            return;
         }
         else {
-            functor.setSum(fluc_sum);
+            sampler.setSum(fluc_sum);
             Kokkos::parallel_for("Loop2", npss*ntss, sampler);
         }
     }
