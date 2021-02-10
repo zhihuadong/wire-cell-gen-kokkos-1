@@ -30,8 +30,8 @@ double g_set_sampling_part5 = 0.0;
 
 struct kokkos_patching_functor {
 
-    double* pvec;
-    double* tvec;
+    View<double*> pvec;
+    View<double*> tvec;
     const int np;
     const int nt;
     View<float*> patch;
@@ -40,7 +40,7 @@ struct kokkos_patching_functor {
     float patch_sum;
 
 
-    kokkos_patching_functor(double* pvec_, double* tvec_, const int np_, const int nt_, View<float*> patch_, double charge_) 
+    kokkos_patching_functor(View<double*> pvec_, View<double*> tvec_, const int np_, const int nt_, View<float*> patch_, double charge_) 
     : pvec(pvec_), tvec(tvec_), np(np_), nt(nt_), patch(patch_), charge(charge_)
     , patch_sum(0.0)
     {
@@ -444,9 +444,16 @@ void GenKokkos::GaussianDiffusion::set_sampling(
 //    }
     // normalize to total charge
     //ret *= m_deposition->charge() / raw_sum;
+    View<double*> tvec_h(tvec.data(), ntss);
+    View<double*> pvec_h(pvec.data(), npss);
+    View<double*> tvec_d("tvec_d", ntss);
+    View<double*> pvec_d("pvec_d", npss);
+    Kokkos::deep_copy(tvec_d, tvec_h) ;
+    Kokkos::deep_copy(pvec_d, pvec_h) ;
+
     
     //Kokkos::DualView<float*> patch("patch", npss*ntss);
-    kokkos_patching_functor functor(pvec.data(), tvec.data(), npss, ntss, patch_V.d_view, charge);
+    kokkos_patching_functor functor(pvec_d, tvec_d, npss, ntss, patch_V.d_view, charge);
     using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
     MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{(long int)npss, (long int)ntss}});
 

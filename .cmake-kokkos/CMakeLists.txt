@@ -4,7 +4,7 @@ project(wire-cell-gen-kokkos CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS Off)
 
-file(GLOB all_files ${PROJECT_SOURCE_DIR}/../src/*.kokkos)
+file(GLOB all_files ${PROJECT_SOURCE_DIR}/src/*.cxx)
 
 include_directories(SYSTEM $ENV{BOOST_INC})
 
