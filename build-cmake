@@ -13,6 +13,17 @@ build_dir_cxx=$top_dir/build/cxx
 build_dir_kokkos=$top_dir/build/kokkos
 mkdir -p $build_dir_cxx $build_dir_kokkos
 
+src_rn_dir=$cmake_dir_kokkos/src
+mkdir -p $src_rn_dir
+
+cd $top_dir/src
+cp *.cxx ${src_rn_dir}
+for file in *.kokkos
+do
+  cp  $file ${src_rn_dir}/$(basename "$file" .kokkos).kokkos.cxx
+done
+
+
 build_cmds="$@"
 
 echo
@@ -20,10 +31,10 @@ echo "======================="
 echo "Building CXX components"
 echo "======================="
 echo
-cd $build_dir_cxx
-[ ! -f Makefile ] && \
-    (cmake $cmake_dir_cxx -DCMAKE_CXX_EXTENSIONS=Off || exit 2)
-make $build_cmds || exit 3
+#cd $build_dir_cxx
+#[ ! -f Makefile ] && \
+#    (cmake $cmake_dir_cxx -DCMAKE_CXX_EXTENSIONS=Off || exit 2)
+#make $build_cmds || exit 3
 
 echo
 echo "=========================="
