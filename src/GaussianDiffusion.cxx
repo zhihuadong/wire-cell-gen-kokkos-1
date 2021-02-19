@@ -494,10 +494,16 @@ void GenKokkos::GaussianDiffusion::set_sampling(
             Kokkos::parallel_for("Loop2", npss*ntss, sampler);
         }
     }
+     View<float*> pt_h(m_patch.data(),ntss*npss) ;
+    auto pt_d = Kokkos::subview(patch_V.d_view, std::make_pair( (size_t)0,(size_t)(ntss*npss))) ;
+    //auto pt_d = Kokkos::subview(patch_V.d_view, make_pair( 1,500)) ;
 
-    Kokkos::deep_copy(patch_V.h_view, patch_V.d_view); // copy from d_view to h_view
 
-    memcpy(m_patch.data(), patch_V.h_view.data(), sizeof(float)*ntss*npss);
+    //Kokkos::deep_copy(patch_V.h_view, patch_V.d_view); // copy from d_view to h_view
+
+    Kokkos::deep_copy(pt_h, pt_d); // copy from d_view to h_view
+
+   // memcpy(m_patch.data(), patch_V.h_view.data(), sizeof(float)*ntss*npss);
 
     wend = omp_get_wtime();
     g_set_sampling_part3 += wend - wstart;
