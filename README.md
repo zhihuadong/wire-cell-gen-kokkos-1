@@ -114,10 +114,8 @@ export LD_LIBRARY_PATH=$WIRECELL_GEN_KOKKOS_INSTALL_PATH/lib64/:$LD_LIBRARY_PATH
 
  - download [this branch](https://github.com/HaiwangYu/wire-cell-toolkit/tree/debug_cuda_gen) of `wire-cell-toolkit`
    - the source code location is referred as `<wire-cell-toolkit-cuda-source>`
- - use the [`configure`](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure) to configue
-   - specify install location for this script, referted as `<wire-cell-toolkit-cuda-install>` later
-   - default use CUDA
-   - remove [these two lines](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure#L22-L23) to use CPU
+ - use the [`configure`](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure) to configue: `./configure <wire-cell-toolkit-cuda-install>`
+   - default use CUDA, remove [these two lines](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure#L22-L23) to use CPU
  - use this cmd to compile and install `./wcb -p --notests install`
  - modify `LD_LIBRARY_PATH` and `WIRECELL_PATH` to use the library and jsonnet configuration
 ```
