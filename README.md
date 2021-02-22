@@ -109,3 +109,20 @@ export LD_LIBRARY_PATH=$WIRECELL_GEN_KOKKOS_INSTALL_PATH/lib64/:$LD_LIBRARY_PATH
 
  - input: a root file (refered to as [`g4.root`](https://github.com/hep-cce2/PPSwork/blob/master/Wire-Cell/examples/g4.root) below) containing Geant4 energy depo (`sim::SimEnergyDeposits`)
  - in the example folder: `lar -n 1 -c sim.fcl g4.root`
+
+## test origin CPU/CUDA implementation
+
+ - download this branch of [`wire-cell-toolkit`](https://github.com/HaiwangYu/wire-cell-toolkit/tree/debug_cuda_gen)
+   - the source code location is referred as `<wire-cell-toolkit-cuda-source>`
+ - use the [`configure`](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure) to configue
+   - specify install location for this script, referted as `<wire-cell-toolkit-cuda-install>` later
+   - default use CUDA
+   - remove these two lines to use CPU
+ - use this cmd to compile and install `./wcb -p --notests install`
+ - modify `LD_LIBRARY_PATH` and `WIRECELL_PATH` to use the library and jsonnet configuration
+```
+export LD_LIBRARY_PATH=<wire-cell-toolkit-cuda-install>/lib64:$LD_LIBRARY_PATH
+export   WIRECELL_PATH=<wire-cell-toolkit-cuda-source>/cfg/:$WIRECELL_PATH
+```
+
+ - in the `wire-cell-gen-kokkos/example` folder run this again `lar -n 1 -c sim.fcl g4.root`
