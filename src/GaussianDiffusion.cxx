@@ -83,11 +83,12 @@ struct kokkos_sampling_functor {
     Kokkos::View<double*> normals;
     using value_type = float;
     float patch_sum;
+    float sum0 ;
     size_t n;
     
 
-    kokkos_sampling_functor(const int np_, View<float*> patch_, Kokkos::View<double*> normals_, double charge_, double sign_)
-    : np(np_), charge(charge_), sign(sign_),  patch(patch_), normals(normals_)
+    kokkos_sampling_functor(const int np_, View<float*> patch_, Kokkos::View<double*> normals_, double charge_, double sign_, float sum_)
+    : np(np_), charge(charge_), sign(sign_),  patch(patch_), normals(normals_), sum0(sum_) 
     , patch_sum(0.0)
     {
         n = (int)(std::abs(charge));
@@ -110,6 +111,7 @@ struct kokkos_sampling_functor {
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, value_type& sum) const
     {
+	patch(i) *=  (charge/sum0) ;
 	double p = patch(i)/charge;
         double q = 1 - p;
         double mu = n*p;
@@ -474,9 +476,11 @@ void GenKokkos::GaussianDiffusion::set_sampling(
     //Kokkos::fence();
     float sum =0.0;
     Kokkos::parallel_reduce(npss*ntss,functor, sum);
-    functor.setSum(sum);
-    Kokkos::parallel_for("Loop2", npss*ntss, functor);
-    //Kokkos::fence();
+    if(!fluctuate) {
+        functor.setSum(sum);
+        Kokkos::parallel_for("Loop2", npss*ntss, functor);
+    }    
+//Kokkos::fence();
 
 
 
@@ -491,7 +495,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(
     if(fluctuate) {
 
         //kokkos_patching_functor functor(patch.d_view,  charge, charge_sign);
-        kokkos_sampling_functor sampler(npss, patch_V.d_view, normals.d_view, charge, charge_sign);
+        kokkos_sampling_functor sampler(npss, patch_V.d_view, normals.d_view, charge, charge_sign, sum);
         //using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
         //MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{npss, ntss}});
 
