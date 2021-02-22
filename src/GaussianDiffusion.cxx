@@ -46,16 +46,19 @@ struct kokkos_patching_functor {
     }
 
     // column major
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const int i, const int j) const
-    {
-        patch(i + np*j) = (float)(ptvec[i]*ptvec[np+j]);
-    }
+    //KOKKOS_INLINE_FUNCTION
+    //void operator()(const int i, const int j) const
+    //{
+    //    patch(i + np*j) = (float)(ptvec[i]*ptvec[np+j]);
+    //}
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, value_type& sum) const
     //void operator()(const int i, float& sum) const
     {
+	int ii=i%np ;
+	int jj=i/np ;
+	patch(i) = (float)(ptvec[ii]*ptvec[np+jj]);
         sum += patch(i);
         //patch_sum += sum;
     }
@@ -91,22 +94,30 @@ struct kokkos_sampling_functor {
     }
 
     //*
-    KOKKOS_INLINE_FUNCTION
-    void operator()(const int i, const int j) const
-    {
-        int index = i + np*j;
-        double p = patch(index)/charge;
-        double q = 1 - p;
-        double mu = n*p;
-        double sigma = sqrt(n*p*q);
-
-        patch(index) = normals(index) * sigma + mu;
-
-    }
+//    KOKKOS_INLINE_FUNCTION
+//    void operator()(const int i, const int j) const
+//    {
+//        int index = i + np*j;
+//        double p = patch(index)/charge;
+//        double q = 1 - p;
+//        double mu = n*p;
+//        double sigma = sqrt(n*p*q);
+//
+//        patch(index) = normals(index) * sigma + mu;
+//
+ //   }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, value_type& sum) const
     {
+	double p = patch(i)/charge;
+        double q = 1 - p;
+        double mu = n*p;
+        double sigma = sqrt(n*p*q);
+
+        patch(i) = normals(i) * sigma + mu;
+
+
         sum += patch(i);
     }
 
@@ -456,10 +467,10 @@ void GenKokkos::GaussianDiffusion::set_sampling(
     
     //Kokkos::DualView<float*> patch("patch", npss*ntss);
     kokkos_patching_functor functor(ptv_d, npss, ntss, patch_V.d_view, charge);
-    using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
-    MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{(long int)npss, (long int)ntss}});
+    //using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
+    //MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{(long int)npss, (long int)ntss}});
 
-    Kokkos::parallel_for("Loop1", mdpolicy_2d, functor);
+    //Kokkos::parallel_for("Loop1", mdpolicy_2d, functor);
     //Kokkos::fence();
     float sum =0.0;
     Kokkos::parallel_reduce(npss*ntss,functor, sum);
@@ -484,7 +495,7 @@ void GenKokkos::GaussianDiffusion::set_sampling(
         //using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
         //MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{npss, ntss}});
 
-        Kokkos::parallel_for("Loop1", mdpolicy_2d, sampler);
+       // Kokkos::parallel_for("Loop1", mdpolicy_2d, sampler);
         float fluc_sum =0.0;
         Kokkos::parallel_reduce(npss*ntss, sampler, fluc_sum);
 
