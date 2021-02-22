@@ -74,7 +74,7 @@ struct generate_random {
 
         for (int k = 0; k < samples/2; k++) {
             double u1 = (double) rand_gen1.urand64(range_min, range_max1) / range_max1; 
-            double u2 = (double) rand_gen2.urand64(range_min, range_max2) / range_max2; 
+            double u2 = (double) rand_gen2.urand64(range_min, range_max2) / range_max2;
             normals(i * samples + 2*k)     = sqrt(-2*log(u1)) * cos(2*PI*u2);
             normals(i * samples + 2*k + 1) = sqrt(-2*log(u1)) * sin(2*PI*u2);
         }
