@@ -30,8 +30,7 @@ double g_set_sampling_part5 = 0.0;
 
 struct kokkos_patching_functor {
 
-    View<double*> pvec;
-    View<double*> tvec;
+    View<double*> ptvec ;
     const int np;
     const int nt;
     View<float*> patch;
@@ -40,8 +39,8 @@ struct kokkos_patching_functor {
     float patch_sum;
 
 
-    kokkos_patching_functor(View<double*> pvec_, View<double*> tvec_, const int np_, const int nt_, View<float*> patch_, double charge_) 
-    : pvec(pvec_), tvec(tvec_), np(np_), nt(nt_), patch(patch_), charge(charge_)
+    kokkos_patching_functor(View<double*> ptvec_, const int np_, const int nt_, View<float*> patch_, double charge_) 
+    : ptvec(ptvec_),  np(np_), nt(nt_), patch(patch_), charge(charge_)
     , patch_sum(0.0)
     {
     }
@@ -50,7 +49,7 @@ struct kokkos_patching_functor {
     KOKKOS_INLINE_FUNCTION
     void operator()(const int i, const int j) const
     {
-        patch(i + np*j) = (float)(pvec[i]*tvec[j]);
+        patch(i + np*j) = (float)(ptvec[i]*ptvec[np+j]);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -371,6 +370,8 @@ void GenKokkos::GaussianDiffusion::set_sampling(
                                                 //Kokkos::DualView<double[MAX_NTSS_DEVICE]>& tvec_V,
                                                 Kokkos::DualView<float*>& patch_V,
                                                 Kokkos::DualView<double*>& normals,
+                                                Kokkos::DualView<double*>& ptvecs,
+                                                double* ptvecs_h,
                                                 const Binning& tbin, // overall time tick binning
                                                 const Binning& pbin, // overall impact position binning
                                                 double nsigma,
@@ -444,16 +445,17 @@ void GenKokkos::GaussianDiffusion::set_sampling(
 //    }
     // normalize to total charge
     //ret *= m_deposition->charge() / raw_sum;
-    View<double*> tvec_h(tvec.data(), ntss);
-    View<double*> pvec_h(pvec.data(), npss);
-    View<double*> tvec_d("tvec_d", ntss);
-    View<double*> pvec_d("pvec_d", npss);
-    Kokkos::deep_copy(tvec_d, tvec_h) ;
-    Kokkos::deep_copy(pvec_d, pvec_h) ;
+
+    memcpy(ptvecs_h, &pvec[0], npss * sizeof(double));
+    memcpy(&ptvecs_h[npss], &tvec[0], ntss * sizeof(double));
+    auto ptv_h = Kokkos::View<double*>( ptvecs_h, ntss+npss  ) ;
+    auto ptv_d = Kokkos::subview(ptvecs.d_view, std::make_pair(0, int(ntss+npss)) ) ;
+
+    Kokkos::deep_copy(ptv_d, ptv_h) ;
 
     
     //Kokkos::DualView<float*> patch("patch", npss*ntss);
-    kokkos_patching_functor functor(pvec_d, tvec_d, npss, ntss, patch_V.d_view, charge);
+    kokkos_patching_functor functor(ptv_d, npss, ntss, patch_V.d_view, charge);
     using MDPolicyType_2D = typename Kokkos::Experimental::MDRangePolicy< Kokkos::Experimental::Rank<2> >;
     MDPolicyType_2D mdpolicy_2d({{0, 0}}, {{(long int)npss, (long int)ntss}});
 
@@ -494,10 +496,16 @@ void GenKokkos::GaussianDiffusion::set_sampling(
             Kokkos::parallel_for("Loop2", npss*ntss, sampler);
         }
     }
+     View<float*> pt_h(m_patch.data(),ntss*npss) ;
+    auto pt_d = Kokkos::subview(patch_V.d_view, std::make_pair( (size_t)0,(size_t)(ntss*npss))) ;
+    //auto pt_d = Kokkos::subview(patch_V.d_view, make_pair( 1,500)) ;
 
-    Kokkos::deep_copy(patch_V.h_view, patch_V.d_view); // copy from d_view to h_view
 
-    memcpy(m_patch.data(), patch_V.h_view.data(), sizeof(float)*ntss*npss);
+    //Kokkos::deep_copy(patch_V.h_view, patch_V.d_view); // copy from d_view to h_view
+
+    Kokkos::deep_copy(pt_h, pt_d); // copy from d_view to h_view
+
+   // memcpy(m_patch.data(), patch_V.h_view.data(), sizeof(float)*ntss*npss);
 
     wend = omp_get_wtime();
     g_set_sampling_part3 += wend - wstart;

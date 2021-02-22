@@ -143,6 +143,9 @@ namespace WireCell {
             //Kokkos::DualView<double[MAX_NTSS_DEVICE]> m_tvec;
             Kokkos::DualView<float*> m_patch;
             Kokkos::DualView<double*> m_normals;
+            Kokkos::DualView<double*> m_ptvecs;
+	    void* m_ptvecs_h ;
+	    
 
         private:
             //#ifdef HAVE_CUDA_INC
