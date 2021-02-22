@@ -72,11 +72,11 @@ struct generate_random {
         typename GeneratorPool::generator_type rand_gen1 = rand_pool1.get_state();
         typename GeneratorPool::generator_type rand_gen2 = rand_pool2.get_state();
 
-        for (int k = 0; k < samples; k++) {
+        for (int k = 0; k < samples/2; k++) {
             double u1 = (double) rand_gen1.urand64(range_min, range_max1) / range_max1; 
             double u2 = (double) rand_gen2.urand64(range_min, range_max2) / range_max2; 
-            normals(i * samples + k)     = sqrt(-2*log(u1)) * cos(2*PI*u2);
-            //normals(i * samples + k + 1) = sqrt(-2*log(u1)) * sin(2*PI*u2);
+            normals(i * samples + 2*k)     = sqrt(-2*log(u1)) * cos(2*PI*u2);
+            normals(i * samples + 2*k + 1) = sqrt(-2*log(u1)) * sin(2*PI*u2);
         }
 
         rand_pool1.free_state(rand_gen1);
@@ -122,12 +122,15 @@ GenKokkos::BinnedDiffusion_transform::BinnedDiffusion_transform(const Pimpos& pi
     , m_outside_time(0)
 {
     Kokkos::realloc(m_patch, MAX_NPSS_DEVICE*MAX_NTSS_DEVICE);
+    Kokkos::realloc(m_ptvecs, MAX_NPSS_DEVICE+MAX_NTSS_DEVICE);
+    m_ptvecs_h = (void*)malloc((MAX_NPSS_DEVICE+MAX_NTSS_DEVICE)*sizeof(double)) ;
     init_Device();
 }
 
 
 GenKokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
     clear_Device();
+    free(m_ptvecs_h);
 }
 
 
@@ -135,7 +138,7 @@ GenKokkos::BinnedDiffusion_transform::~BinnedDiffusion_transform() {
 void GenKokkos::BinnedDiffusion_transform::init_Device() {
 
 
-    size_t size = RANDOM_BLOCK_NUM/2;
+    size_t size = RANDOM_BLOCK_NUM;
     size_t samples = RANDOM_BLOCK_SIZE;
     int seed = 2020;
 
@@ -144,8 +147,7 @@ void GenKokkos::BinnedDiffusion_transform::init_Device() {
     //Kokkos::DualView<double*> normals("Normals", size * samples);
     Kokkos::resize(m_normals, size * samples);
 
-    Kokkos::parallel_for(size, generate_random<Kokkos::Random_XorShift64_Pool<> >(m_normals.d_view, rand_pool1, rand_pool2, samples));
-
+    Kokkos::parallel_for(size*samples/256, generate_random<Kokkos::Random_XorShift64_Pool<> >(m_normals.d_view, rand_pool1, rand_pool2, 256));
 }
 
 
@@ -157,7 +159,6 @@ void GenKokkos::BinnedDiffusion_transform::clear_Device() {
 
   //CURAND_SAFE_CALL(curandDestroyGenerator(m_Gen));
 
-  //delete[] tempVec;
 }
 
 
@@ -408,7 +409,7 @@ void GenKokkos::BinnedDiffusion_transform::get_charge_vec(std::vector<std::vecto
     diff->set_sampling_CUDA(m_pvec_D, m_tvec_D, m_patch_D, m_rand_D, &m_Gen, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     #else
     //diff->set_sampling(m_pvec, m_tvec, m_patch, m_normals, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
-    diff->set_sampling(m_patch, m_normals, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
+    diff->set_sampling(m_patch, m_normals, m_ptvecs, (double*)m_ptvecs_h, m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     //diff->set_sampling(m_tbins, ib, m_nsigma, m_fluctuate, m_calcstrat);
     #endif
     wend2 = omp_get_wtime();

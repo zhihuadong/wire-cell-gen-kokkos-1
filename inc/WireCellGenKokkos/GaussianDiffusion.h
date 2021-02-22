@@ -119,6 +119,8 @@ namespace WireCell {
                               //Kokkos::DualView<double[MAX_NTSS_DEVICE]>& tvec,
                               Kokkos::DualView<float*>& patch,
                               Kokkos::DualView<double*>& normals,
+                              Kokkos::DualView<double*>& ptvecs,
+                              double* ptvecs_h,
                               const Binning& tbin, const Binning& pbin,
                               double nsigma = 3.0, 
                               IRandom::pointer fluctuate=nullptr, 
