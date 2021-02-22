@@ -112,7 +112,7 @@ export LD_LIBRARY_PATH=$WIRECELL_GEN_KOKKOS_INSTALL_PATH/lib64/:$LD_LIBRARY_PATH
 
 ## test origin CPU/CUDA implementation
 
- - download this branch of [`wire-cell-toolkit`](https://github.com/HaiwangYu/wire-cell-toolkit/tree/debug_cuda_gen)
+ - download [this branch](https://github.com/HaiwangYu/wire-cell-toolkit/tree/debug_cuda_gen) of `wire-cell-toolkit`
    - the source code location is referred as `<wire-cell-toolkit-cuda-source>`
  - use the [`configure`](https://github.com/HaiwangYu/wire-cell-toolkit/blob/debug_cuda_gen/configure) to configue
    - specify install location for this script, referted as `<wire-cell-toolkit-cuda-install>` later
