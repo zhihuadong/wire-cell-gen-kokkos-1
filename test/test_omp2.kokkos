@@ -1,0 +1,74 @@
+#include <Kokkos_Core.hpp>
+
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <thread>
+#include <vector>
+
+using namespace Kokkos;
+using  namespace std;
+
+
+int main(int argc, char *argv[])
+{
+    int npatch = 100000;
+    int size =20;
+
+    if (argc > 1) {
+        npatch = atoi(argv[1]);
+    }
+
+
+    if (argc > 2) {
+        size = atoi(argv[2]);
+    }
+
+    std::cout << "Npatchs: " << npatch  << "   Size: "<< size<< "   Num_Threads: " << omp_get_max_threads();
+
+    Kokkos::initialize(argc, argv);
+    {
+
+    Kokkos::View<float*> patch("test_view", size*size) ;
+
+
+    double t1 = omp_get_wtime() ;
+    for (int rep = 0; rep < npatch; ++rep) {
+           parallel_for("Simple", size*size, KOKKOS_LAMBDA( int i ){ patch(i) =1.0 ; })  ;
+    }
+    double t2 = omp_get_wtime() ;
+    std::cout << "  Kokkos:Simple: "
+              << " " << t2-t1 ;
+     
+    Kokkos::View<double*> v1("v1", size) ;
+    Kokkos::View<double*> v2("v2", size) ;
+    float sum=0.0  ;
+
+    for (int rep = 0; rep < npatch; ++rep) {
+           parallel_reduce("reduce", size*size,
+                 KOKKOS_LAMBDA( int i, float& result ){
+                     patch(i)=(float) (v1(i/size) *v2(i%size)) ;
+                     result += patch(i) ; 
+	 	}, 
+           sum ) ; 
+    }
+    double t3 = omp_get_wtime() ;
+    std::cout << "  Kokkos:reduce: "
+              << " " << t3-t2 ;
+
+    sum =0.0 ;
+    for (int rep = 0; rep < npatch; ++rep) 
+        for (int ii=0 ; ii<size*size ; ii++ ) {
+             float p = (float) (v1(ii/size) *v2(ii%size)) ;
+             sum += p ;
+     }
+    double t4 = omp_get_wtime() ;
+    std::cout << " serial:reduce: "
+              << " " << t4-t3 
+              << std::endl;
+    }
+    Kokkos::finalize();
+}

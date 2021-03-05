@@ -1,0 +1,274 @@
+#include <Kokkos_Core.hpp>
+
+#include <chrono>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <thread>
+#include <vector>
+
+using namespace Kokkos;
+using  namespace std;
+
+using Scalar = float ;
+
+double g_set_sampling_part1 = 0.0;
+double g_set_sampling_part2 = 0.0;
+double g_set_sampling_part3 = 0.0;
+double g_set_sampling_part4 = 0.0;
+double g_set_sampling_part5 = 0.0;
+
+
+
+struct kokkos_patching_functor {
+
+    View<double*> ptvec ;
+    const int np;
+    const int nt;
+    View<float*> patch;
+    double charge;
+    using value_type = float;
+    float patch_sum;
+
+
+    kokkos_patching_functor(View<double*> ptvec_, const int np_, const int nt_, View<float*> patch_, double charge_)
+    : ptvec(ptvec_),  np(np_), nt(nt_), patch(patch_), charge(charge_)
+    , patch_sum(0.0)
+    {
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i, value_type& sum) const
+    //void operator()(const int i, float& sum) const
+    {
+        sum += patch(i);
+        //patch_sum += sum;
+    }
+
+     KOKKOS_INLINE_FUNCTION
+    void operator()(const int i) const
+    {
+        //int ii=i%np ;
+        //int jj=i/np ;
+        //patch(i) = (float)(ptvec[ii]*ptvec[np+jj]);
+        patch(i) = 1.0  ;
+    }
+
+ //    KOKKOS_INLINE_FUNCTION
+ //   void operator()(const int i) const
+ //   {
+ //       patch(i) *= (charge/patch_sum);
+ //   }
+
+    void setSum(float sum) {patch_sum = sum;}
+
+};
+
+
+struct kokkos_sampling_functor {
+
+    double np;
+    double charge;
+    double sign;
+    View<float*> patch;
+    View<double*> normals;
+    using value_type = float;
+    float patch_sum;
+    float sum0 ;
+    size_t n;
+
+
+    kokkos_sampling_functor(const int np_, View<float*> patch_, Kokkos::View<double*> normals_, double charge_, double sign_, float sum_)
+    : np(np_), charge(charge_), sign(sign_),  patch(patch_), normals(normals_), sum0(sum_)
+    , patch_sum(0.0)
+    {
+        n = (int)(std::abs(charge));
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i, value_type& sum) const
+    {
+        patch(i) *=  (charge/sum0) ;
+        double p = patch(i)/charge;
+        double q = 1 - p;
+        double mu = n*p;
+        double sigma = sqrt(n*p*q);
+
+        patch(i) = normals(i) * sigma + mu;
+
+
+        sum += patch(i);
+    }
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const int i) const
+    {
+        patch(i) *= (charge/patch_sum);
+    }
+
+    void setSum(float sum) {patch_sum = sum;}
+    //*/
+
+
+
+};
+
+
+View < double*> init_view_vecs(const int N0, const int N1, const Scalar val = 0)
+{
+    View<double*> ret("ret", N0+N1);
+    Kokkos::parallel_for("setRet", N0+N1,
+                         KOKKOS_LAMBDA(const int &i0 ) { ret(i0) = val; });
+    return ret;
+}
+
+View <float*> init_view_patch(const int N0, const int N1 , const Scalar val = 0 ) 
+{
+    View<float*> ret("ret", N0*N1);
+    Kokkos::parallel_for("setRet", N0*N1,
+                         KOKKOS_LAMBDA(const int &i0 ) { ret(i0) = val; });
+    return ret;
+}
+View<double*> init_view_norm(const unsigned long N0 , const double  val = 0.5 ) 
+{
+    View<double*> ret("ret", N0);
+    Kokkos::parallel_for("setRet", N0,
+                         KOKKOS_LAMBDA(const int &i0 ) { ret(i0) = val; });
+    return ret;
+}
+
+
+
+
+
+double set_sampling(
+                                                Kokkos::View<float*>& patch_V,
+                                                Kokkos::View<double*>& normals,
+                                                Kokkos::View<double*>& ptvecs,
+                                                double* ptvecs_h,
+                                                float*  patch_h , 
+						int npss ,
+						int ntss ,
+                                                bool copy  
+     //           const Binning& tbin, // overall time tick binning
+     //           const Binning& pbin, // overall impact position binning
+     //             double nsigma,
+    //            IRandom::pointer fluctuate,
+    //            unsigned int weightstrat
+    )
+{
+    double wstart, middle, wend;
+
+    wstart = omp_get_wtime();
+
+    double charge =1.0 ;
+    const double charge_sign =1 ;
+
+     std::vector<double> pvec( npss, 2.0) ;
+     std::vector<double> tvec( ntss, 2.0) ;
+
+    if( copy) { 
+    memcpy(ptvecs_h, &pvec[0], npss * sizeof(double));
+    memcpy(&ptvecs_h[npss], &tvec[0], ntss * sizeof(double));
+    }
+    auto ptv_h = Kokkos::View<double*>( ptvecs_h, ntss+npss  ) ;
+    auto ptv_d = Kokkos::subview(ptvecs, std::make_pair(0, int(ntss+npss)) ) ;
+
+    if(copy) Kokkos::deep_copy(ptv_d, ptv_h) ;
+
+   
+    kokkos_patching_functor functor(ptv_d, npss, ntss, patch_V, charge);
+
+    wend = omp_get_wtime();
+    g_set_sampling_part2 += wend - wstart;
+
+    middle = omp_get_wtime();
+    float sum =0.0;
+    //Kokkos::parallel_reduce(npss*ntss,functor, sum);
+    Kokkos::parallel_for(npss*ntss,functor);
+  //  if(!fluctuate) {
+  //      functor.setSum(sum);
+  //      Kokkos::parallel_for("Loop2", npss*ntss, functor);
+  //  }
+
+if(0) {
+//    if(fluctuate) {
+        kokkos_sampling_functor sampler(npss, patch_V, normals, charge, charge_sign, sum);
+        float fluc_sum =0.0;
+        Kokkos::parallel_reduce(npss*ntss, sampler, fluc_sum);
+        if (fluc_sum == 0) {
+           std::cout<<"fluc_sum=0 ? " << std::endl ;
+           return -10000.0  ;
+        }
+        else {
+            sampler.setSum(fluc_sum);
+            Kokkos::parallel_for("Loop2", npss*ntss, sampler);
+        }
+//    }
+     if(copy) {
+     View<float*> pt_h(patch_h,ntss*npss) ;
+     auto pt_d = Kokkos::subview(patch_V, std::make_pair( (size_t)0,(size_t)(ntss*npss))) ;
+
+    Kokkos::deep_copy(pt_h, pt_d); // copy from d_view to h_view
+   }
+}
+    wend = omp_get_wtime();
+    g_set_sampling_part3 += wend - middle;
+
+
+    return(wend -wstart) ;
+}
+                                                               
+
+
+
+
+int main(int argc, char *argv[])
+{
+    int npatch = 100;
+    int nrep = 10;
+    int vec_size =20;
+    bool verbose = false;
+    bool copy = true ;
+
+    if (argc > 1) {
+        npatch = atoi(argv[1]);
+    }
+
+
+    if (argc > 2) {
+        vec_size = atoi(argv[2]);
+    }
+    if (argc > 3) {
+        copy = (bool) atoi(argv[3]);
+    }
+
+
+    std::cout << "npatch: " << npatch  << std::endl;
+    nrep =npatch ;
+    double time = 0;
+    Kokkos::initialize(argc, argv);
+    {
+    float* patch_h = (float * ) malloc(sizeof(float)*vec_size*vec_size*100) ;
+    double* vec_h = (double * ) malloc(sizeof(double)*vec_size*20) ;
+
+    Kokkos::View<double*> vec_d=init_view_vecs(10*vec_size, 10*vec_size, 0.5 ) ;
+    Kokkos::View<double*> normal=init_view_norm(100*vec_size*vec_size,  0.5 ) ;
+    Kokkos::View<float*> patch = init_view_patch(10*vec_size, 10*vec_size, 0.5 ) ;
+
+
+        for (int rep = 0; rep < nrep; ++rep) {
+            time += set_sampling( patch, normal, vec_d, vec_h, patch_h ,vec_size, vec_size , copy);
+        }
+        std::cout << "Kokkos::Timer: "
+                  << " " << time 
+		  << " part 1 : " << g_set_sampling_part2 
+		  << " part 2 : " << g_set_sampling_part3 
+                  << std::endl;
+    free (patch_h) ;
+    free (vec_h) ;
+    }
+    Kokkos::finalize();
+}
