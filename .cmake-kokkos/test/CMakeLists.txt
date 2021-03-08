@@ -2,6 +2,7 @@ set(all_execs
   test_atadd.kokkos
   test_random.kokkos
   test_cuda.kokkos
+  test_omp2.kokkos
 )
 
 set(source_dir ${PROJECT_SOURCE_DIR}/../test)

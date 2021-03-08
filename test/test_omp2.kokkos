@@ -59,15 +59,32 @@ int main(int argc, char *argv[])
     std::cout << "  Kokkos:reduce: "
               << " " << t3-t2 ;
 
+    Kokkos::View<float*> sum_v("sums", npatch) ;
+
+    //Kokkos::TeamPolicy policy(npatch,size*size) ;
+    parallel_for ("Nest",npatch, KOKKOS_LAMBDA(int j) {
+           for(int i=0 ; i<  size*size; i++) {
+                     patch(i)  =(float) (v1(i/size) *v2(i%size)) ;
+                     sum_v(j) += patch(i) ;
+	 	} 
+            }
+            ) ; 
+    Kokkos::fence() ;
+    double t4 = omp_get_wtime() ;
+    std::cout << "  Kokkos:reduce:batch: "
+              << " " << t4-t3 ;
+
     sum =0.0 ;
+    Kokkos::View<double*,HostSpace> v1_h("V1_h", size);
+    Kokkos::View<double*,HostSpace> v2_h("V2_h", size);
     for (int rep = 0; rep < npatch; ++rep) 
         for (int ii=0 ; ii<size*size ; ii++ ) {
-             float p = (float) (v1(ii/size) *v2(ii%size)) ;
+             float p = (float) (v1_h(ii/size) *v2_h(ii%size)) ;
              sum += p ;
      }
-    double t4 = omp_get_wtime() ;
+    double t5 = omp_get_wtime() ;
     std::cout << " serial:reduce: "
-              << " " << t4-t3 
+              << " " << t5-t4 
               << std::endl;
     }
     Kokkos::finalize();

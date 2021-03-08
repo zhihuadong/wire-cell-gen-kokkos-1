@@ -5,6 +5,17 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS Off)
 
 file(GLOB all_files ${PROJECT_SOURCE_DIR}/src/*.cxx)
+file(GLOB all_kk_files ${PROJECT_SOURCE_DIR}/src/*.kokkos)
+
+foreach(source_file IN LISTS all_kk_files)
+  get_filename_component(exec_name ${source_file} NAME)
+  set(renamed_source_file ${CMAKE_CURRENT_BINARY_DIR}/${exec_name}.cxx)
+  configure_file(${source_file} ${renamed_source_file} COPYONLY)
+  list(APPEND all_files ${renamed_source_file})
+  #add_executable(${exec_name} ${renamed_source_file})
+  #target_link_libraries(${exec_name} PRIVATE Kokkos::kokkos)
+endforeach()
+
 
 include_directories(SYSTEM $ENV{BOOST_INC})
 
